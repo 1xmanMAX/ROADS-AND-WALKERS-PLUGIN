@@ -116,8 +116,8 @@ Ejemplo eje 0+050: losa superior 3821.250 → base superior 3821.250 − 0.16 = 
 ### 4.5 Lectura teórica de mira
 AI (altura instrumental) = cota BM + lectura atrás. Lectura = AI − cota de diseño.
 
-Ejemplo: BM-01 = 3821.316, lectura atrás 1.425 → AI = **3822.741**.
-Eje 0+050 losa: 3822.741 − 3821.250 = **1.491**; base: 3822.741 − 3821.090 = **1.651**.
+Ejemplo: BM-01 = 3821.321, lectura atrás 1.425 → AI = **3822.746**.
+Eje 0+050 losa: 3822.746 − 3821.250 = **1.496**; base: 3822.746 − 3821.090 = **1.656**.
 La app da la tabla; tú solo ingresas la lectura atrás del día.
 
 ### 4.6 Terreno existente

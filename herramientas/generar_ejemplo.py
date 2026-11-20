@@ -177,6 +177,17 @@ def offset_fachada(eje, lado, p):
     return o
 
 
+def offset_fachada_nominal(eje, lado, p):
+    """Offset de la fachada sin la variación aleatoria (para el levantamiento)."""
+    if eje == "EJE-01" and lado == "IZQ" and 40 <= p <= 60:
+        return 5.30
+    if eje == "EJE-01" and lado == "DER" and 200 <= p <= 215:
+        return 5.45
+    if eje == "EJE-02" and lado == "DER" and 20 <= p <= 32:
+        return 5.05
+    return OFF_FACHADA + 0.03
+
+
 fachadas = []
 tramos = {
     "EJE-01": (A0, uA, [(0.0, CRUCE_A - OFF_FACHADA), (CRUCE_A + OFF_FACHADA, LEN_A)]),
@@ -220,16 +231,26 @@ terreno = []
 num = 1001
 offs = [(-5.5, "PF"), (-3.5, "BC"), (0.0, "EJ"), (3.5, "BC"), (5.5, "PF")]
 for eje, org, u, L, cruce in (("EJE-01", A0, uA, LEN_A, CRUCE_A), ("EJE-02", B0, uB, LEN_B, CRUCE_B)):
-    progs = [p for p in range(0, int(L) + 1, 15)]
+    # el levantamiento se extiende 3 m antes y después de cada calle
+    progs = [-3.0] + [p for p in range(0, int(L) + 1, 15)]
     if progs[-1] != L:
         progs.append(L)
+    progs.append(L + 3.0)
     for p in progs:
         if eje == "EJE-02" and abs(p - cruce) < 8:      # el cruce ya lo cubre el EJE-01
             continue
         for o, cod in offs:
             if abs(p - cruce) < 6 and cod == "PF":      # no hay fachada en la esquina
                 cod = "TN"
-            e, n = punto(org, u, p + random.uniform(-0.8, 0.8), o + random.uniform(-0.2, 0.2))
+            pj = p if p in (-3.0, 0, L, L + 3.0) else p + random.uniform(-0.8, 0.8)
+            if cod == "PF":     # el pie de fachada se levanta pegado al muro
+                lado = "IZQ" if o < 0 else "DER"
+                oo = (offset_fachada_nominal(eje, lado, pj) + 0.05) * (1 if o > 0 else -1)
+            elif cod == "TN":   # esquina sin fachada
+                oo = 6.0 * (1 if o > 0 else -1)
+            else:
+                oo = o + random.uniform(-0.2, 0.2)
+            e, n = punto(org, u, pj, oo)
             terreno.append([num, f3(e), f3(n), f3(z_terreno(e, n)), cod])
             num += 1
 # relleno de la intersección (rejilla de 4 m)

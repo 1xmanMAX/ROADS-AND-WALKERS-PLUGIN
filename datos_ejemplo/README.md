@@ -61,7 +61,7 @@ python herramientas/generar_ejemplo.py
 | `cunetas_por_tramo.csv` | cuneta básica (ancho × profundidad) por defecto y excepciones por tramo |
 | `fachadas.csv` | polilíneas de límite de propiedad por eje y lado (FACHADA / MURO) |
 | `umbrales.csv` | puertas y cocheras con su cota de umbral levantada |
-| `terreno.csv` | 172 puntos del levantamiento (PENZD): EJ eje, BC borde camino, PF pie de fachada, TN terreno |
+| `terreno.csv` | 192 puntos del levantamiento (PENZD) cada 15 m, desde 3 m antes hasta 3 m después de cada calle: EJ eje, BC borde camino, PF pie de fachada, TN terreno |
 | `bm.csv` | 3 BMs con cota |
 
 **Convención de lados:** IZQ / DER mirando en el sentido de avance de las progresivas.
