@@ -1,0 +1,20 @@
+﻿codigo,nombre,tipo,terreno,color,simbolo,regla,uso
+TN,Terreno natural,TERRENO,si,#8d6e63,.,ninguna,"Puntos sueltos del terreno, cada 10-20 m"
+EJ,Eje de camino existente,TERRENO,si,#5d4037,+,ninguna,Centro del camino actual
+BC,Borde de camino existente,TERRENO,si,#a1887f,x,ninguna,Borde del camino actual
+VE,Vereda existente,TERRENO,si,#bcaaa4,.,ninguna,Vereda que ya existe (nivel)
+CA,Casa (fachada),LINEA,si,#c0392b,s,ninguna,"Esquinas y quiebres de la fachada al pie del muro. CA1, CA2... una línea por manzana o casa"
+MU,Muro / cerco,LINEA,si,#e67e22,s,ninguna,"Cerco o muro de propiedad. MU1, MU2..."
+LP,Límite de propiedad (lote sin construir),LINEA,si,#d4ac0d,s,ninguna,"Límite de lote vacío o terreno sin cerco. LP1, LP2..."
+PU,Puerta,PUERTA,no,#8e44ad,D,ninguna,Un punto al centro del umbral de la puerta
+COI,Cochera: inicio del portón,COCHERA,no,#2471a3,>,ninguna,"Primer extremo del portón de cochera, a la altura del umbral"
+COF,Cochera: fin del portón,COCHERA,no,#2471a3,<,ninguna,Segundo extremo del portón (tomar justo después del COI)
+BZ,Buzón (tapa),ELEMENTO,no,#117a65,o,nivelar,Centro de la tapa del buzón
+CAG,Caja de agua / medidor,ELEMENTO,no,#2e86c1,p,nivelar,Centro de la tapa
+CDE,Caja de registro de desagüe,ELEMENTO,no,#148f77,p,nivelar,Centro de la tapa
+CLZ,Caja de luz / telefonía,ELEMENTO,no,#d68910,p,nivelar,Centro de la tapa
+PO,Poste,ELEMENTO,no,#212f3d,P,obstaculo,Centro del poste al pie
+AR,Árbol,ELEMENTO,no,#1e8449,*,obstaculo,Centro del tronco al pie
+GR,Grifo contra incendio,ELEMENTO,no,#cb4335,h,obstaculo,Centro del grifo
+SEN,Señal / letrero,ELEMENTO,no,#7f8c8d,^,obstaculo,Pie del poste de la señal
+BM,BM (punto de control),BM,no,#6c3483,^,ninguna,"BM1, BM2... sobre el hito; la cota del punto es la cota del BM"

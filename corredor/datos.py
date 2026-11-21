@@ -6,6 +6,8 @@ punto o con coma. Los mensajes de error indican archivo, fila y columna.
 import csv
 from pathlib import Path
 
+from .codigos import Catalogo, catalogo_en, guardar_catalogo
+from .levantamiento import aplicar, interpretar
 from .modelo import (BM, PARAMETROS, TEXTO, Calle, Capa, LineaFachada, Proyecto,
                      PuntoTerreno, TramoCuneta, Umbral)
 
@@ -198,22 +200,36 @@ def leer_proyecto(carpeta):
                                _num(f, "espesor_cm", arch.name, i)))
 
     # --- opcionales
-    arch = c / "cunetas_por_tramo.csv"
-    if arch.exists():
+    if (c / "cunetas_por_tramo.csv").exists():
+        arch = c / "cunetas_por_tramo.csv"
         for i, f in enumerate(leer_csv(arch), start=2):
             proy.cunetas.append(TramoCuneta(f["eje_id"], (f.get("lado") or "AMBOS").upper(),
                                             _num(f, "prog_ini", arch.name, i), _num(f, "prog_fin", arch.name, i),
                                             _num(f, "ancho_cm", arch.name, i),
                                             _num(f, "profundidad_cm", arch.name, i), f.get("nota", "")))
+    proy.catalogo = catalogo_en(c)
+    # levantamiento codificado (forma recomendada): un solo archivo con todos los puntos
+    if (c / "levantamiento.csv").exists():
+        proy.levantamiento = leer_terreno(c / "levantamiento.csv")
+        reinterpretar(proy)
+    # archivos separados (forma antigua, se siguen aceptando)
     if (c / "fachadas.csv").exists():
-        proy.fachadas = leer_fachadas(c / "fachadas.csv")
+        proy.fachadas += leer_fachadas(c / "fachadas.csv")
     if (c / "umbrales.csv").exists():
-        proy.umbrales = leer_umbrales(c / "umbrales.csv")
-    if (c / "terreno.csv").exists():
+        proy.umbrales += leer_umbrales(c / "umbrales.csv")
+    if (c / "terreno.csv").exists() and not proy.levantamiento:
         proy.terreno = leer_terreno(c / "terreno.csv")
     if (c / "bm.csv").exists():
-        proy.bms = leer_bms(c / "bm.csv")
+        ids = {b.id for b in proy.bms}
+        proy.bms += [b for b in leer_bms(c / "bm.csv") if b.id not in ids]
     return proy
+
+
+def reinterpretar(proy):
+    """Vuelve a leer los códigos del levantamiento (después de editar el catálogo o los puntos)."""
+    it = interpretar(proy.levantamiento, proy.catalogo or Catalogo(), proy.p("separacion_max_linea"))
+    aplicar(proy, it)
+    return it
 
 
 def encadenar_cotas(calle):
@@ -282,6 +298,11 @@ def guardar_proyecto(proy, carpeta):
        [[cp.ambito, cp.orden, cp.nombre, cp.espesor_cm] for cp in sorted(proy.capas, key=lambda x: (x.ambito, x.orden))])
     _w(c / "cunetas_por_tramo.csv", ["eje_id", "lado", "prog_ini", "prog_fin", "ancho_cm", "profundidad_cm", "nota"],
        [[t.eje_id, t.lado, f3(t.prog_ini), f3(t.prog_fin), t.ancho_cm, t.profundidad_cm, t.nota] for t in proy.cunetas])
+    guardar_catalogo(proy.catalogo or Catalogo(), c / "codigos.csv")
+    if proy.levantamiento:
+        _w(c / "levantamiento.csv", ["punto", "este", "norte", "cota", "codigo"],
+           [[p.numero, f3(p.este), f3(p.norte), f3(p.cota), p.codigo] for p in proy.levantamiento])
+        return
     _w(c / "fachadas.csv", ["eje_id", "lado", "linea_id", "orden", "este", "norte", "tipo"],
        [[l.eje_id, l.lado, l.linea_id, i, f3(e), f3(n), t] for l in proy.fachadas
         for i, (e, n, t) in enumerate(l.puntos, start=1)])

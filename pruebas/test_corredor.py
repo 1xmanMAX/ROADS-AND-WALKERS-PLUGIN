@@ -103,17 +103,68 @@ def test_lectura_mira(proy, res):
 def test_veredas_recortadas(res):
     av = [a for a in res.avisos if a.categoria == "VEREDA"]
     textos = " ".join(a.mensaje for a in av)
-    assert "1.15" in textos and "0.90" in textos and "1.30" in textos
+    assert "MU a 1.15" in textos and "0.90" in textos and "1.30" in textos
 
 
 def test_puertas(res):
-    d = {u["umbral"].id: u["diferencia"] for u in res.umbrales}
-    assert d["PU-02"] == pytest.approx(-0.080, abs=0.002)
-    assert d["PU-04"] == pytest.approx(-0.030, abs=0.002)
-    assert d["PU-01"] == pytest.approx(0.060, abs=0.002)
-    assert d["PU-03"] == pytest.approx(0.120, abs=0.002)
-    assert d["CO-01"] == pytest.approx(0.020, abs=0.002)
-    assert sum(a.nivel == "ERROR" and a.categoria == "PUERTA" for a in res.avisos) == 2
+    """Umbral − vereda proyectada en la fachada, identificadas por calle y progresiva."""
+    d = {(u["eje"], round(u["prog"])): u["diferencia"] for u in res.umbrales}
+    assert d[("EJE-01", 85)] == pytest.approx(-0.080, abs=0.002)     # enterrada
+    assert d[("EJE-02", 140)] == pytest.approx(-0.030, abs=0.002)    # enterrada
+    assert d[("EJE-01", 35)] == pytest.approx(0.060, abs=0.002)
+    assert d[("EJE-02", 50)] == pytest.approx(0.120, abs=0.002)
+    assert d[("EJE-01", 170)] == pytest.approx(0.025, abs=0.003)     # cochera (promedio de COI y COF)
+    assert d[("EJE-02", 122)] == pytest.approx(-0.045, abs=0.003)    # cochera enterrada
+    enterradas = [x for x in res.interferencias if x["tipo"] in ("PUERTA", "COCHERA") and x["nivel"] == "ERROR"]
+    assert len(enterradas) == 3
+
+
+def test_levantamiento_codificado(proy):
+    p = proy
+    assert len(p.bms) == 3 and [b.id for b in p.bms] == ["BM-01", "BM-02", "BM-03"]
+    assert sum(u.tipo == "PUERTA" for u in p.umbrales) == 5
+    coch = [u for u in p.umbrales if u.tipo == "COCHERA"]
+    assert len(coch) == 2 and all(u.ancho == pytest.approx(3.0, abs=0.01) for u in coch)
+    tipos = {l.tipo for l in p.fachadas}
+    assert {"CA", "MU", "LP"} <= tipos
+    assert {e.tipo_codigo for e in p.elementos} >= {"BZ", "PO", "AR", "GR", "CAG", "CLZ", "SEN"}
+    assert p.avisos_levantamiento == []
+
+
+def test_codigos():
+    from corredor.codigos import Catalogo, separar_codigo
+    assert separar_codigo("ca1 casa verde") == ("CA1", "CA", "1", "casa verde")
+    cat = Catalogo()
+    c, tok, num, nota = cat.interpretar("BM3 hito")
+    assert c.codigo == "BM" and num == "3"
+    assert cat.interpretar("COI")[0].codigo == "COI"
+    assert cat.interpretar("XYZ")[0] is None
+
+
+def test_interferencias(res):
+    by_id = {x["id"].split("-")[0] + "@" + x["eje"] + f"{x['prog']:.0f}": x for x in res.interferencias if x["prog"]}
+    poste_cuneta = by_id["PO@EJE-01150"]
+    assert poste_cuneta["zona"] == "CUNETA" and poste_cuneta["nivel"] == "ERROR"
+    arbol = by_id["AR@EJE-01230"]
+    assert arbol["zona"] == "VEREDA" and arbol["nivel"] == "ERROR"           # paso libre 0.85 < 0.90
+    bz = by_id["BZ@EJE-0160"]
+    assert bz["zona"] == "CALZADA" and bz["cota_diseno"] == pytest.approx(3820.5 + 0.015 * 60, abs=0.002)
+    assert "bajar la tapa" in bz["accion"]
+    assert "subir la tapa" in by_id["BZ@EJE-02175"]["accion"]               # buzón en la hondonada
+
+
+def test_bm_ubicados(res):
+    t = {b["bm"].id: b for b in res.bm_ubicacion}
+    assert t["BM-01"]["eje"] == "EJE-01" and t["BM-01"]["prog"] == pytest.approx(5.0, abs=0.01)
+    assert t["BM-03"]["eje"] == "EJE-02" and t["BM-03"]["offset"] < 0
+
+
+def test_balance(res, proy):
+    rc = res.calles["EJE-02"]
+    b = rc.balance
+    assert b["eliminacion"] == pytest.approx(rc.vol_corte * (1 + proy.p("esponjamiento") / 100))
+    assert b["prestamo"] == pytest.approx(rc.vol_relleno * (1 + proy.p("contraccion_relleno") / 100))
+    assert rc.curva_masa[-1][1] == pytest.approx(rc.vol_corte - rc.vol_relleno * (1 + proy.p("contraccion_relleno") / 100))
 
 
 # ------------------------------------------------------------------ cruce

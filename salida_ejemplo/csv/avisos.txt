@@ -1,11 +1,22 @@
-[ERROR] VEREDA EJE-01 0+040.00: lado IZQ de 0+040.00 a 0+060.00: ancho disponible mín. 1.15 m (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
-[ERROR] PUERTA EJE-01 0+085.00: PU-02 (puerta, lado IZQ): el umbral 3821.803 quedaría 0.080 m DEBAJO de la vereda proyectada (3821.883): puerta enterrada.
-[ERROR] VEREDA EJE-02 0+020.00: lado DER de 0+020.00 a 0+030.00: ancho disponible mín. 0.90 m (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
-[ERROR] PUERTA EJE-02 0+140.00: PU-04 (puerta, lado DER): el umbral 3822.778 quedaría 0.030 m DEBAJO de la vereda proyectada (3822.808): puerta enterrada.
-[AVISO] COCHERA EJE-01 0+170.00: CO-01: cochera de 3.00 m. Prever rebaje de sardinel y rampa en vereda de 0+168.50 a 0+171.50 (se define en campo).
-[AVISO] VEREDA EJE-01 0+200.00: lado DER de 0+200.00 a 0+210.00: ancho disponible mín. 1.30 m (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
-[AVISO] VEREDA EJE-02 0+150.00: lado DER de 0+150.00 a 0+190.00: ancho disponible mín. 1.37 m (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
-[INFO] PUERTA EJE-01 0+035.00: PU-01 (puerta, lado DER): umbral 0.060 m sobre la vereda. OK.
-[INFO] COCHERA EJE-01 0+170.00: CO-01 (cochera, lado DER): umbral 0.021 m sobre la vereda. OK.
-[INFO] PUERTA EJE-02 0+050.00: PU-03 (puerta, lado IZQ): umbral 0.120 m sobre la vereda. OK.
+[ERROR] VEREDA EJE-01 0+040.00: lado IZQ de 0+040.00 a 0+050.00: MU a 1.15 m del sardinel (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
+[ERROR] PUERTA EJE-01 0+085.00: PU-2014 Puerta: umbral 0.080 m DEBAJO de la vereda (enterrada). bajar la vereda frente a la puerta a 3821.783 (2 cm bajo el umbral) con transición a ambos lados, o coordinar con el propietario
+[ERROR] ELEMENTO EJE-01 0+150.00: PO-3006 Poste: queda dentro de la cuneta. reubicar antes de construir
+[ERROR] ELEMENTO EJE-01 0+230.00: AR-3009 Árbol: en vereda, paso libre 0.85 m. reubicar
+[ERROR] VEREDA EJE-02 0+020.00: lado DER de 0+020.00 a 0+030.00: CA a 0.90 m del sardinel (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
+[ERROR] COCHERA EJE-02 0+121.50: CO-2024/2025 Cochera 3.00 m: umbral 0.045 m DEBAJO de la vereda (enterrada). bajar la vereda frente a la puerta a 3822.521 (2 cm bajo el umbral) con transición a ambos lados, o coordinar con el propietario; rebajar sardinel a 3822.436 de 0+120.00 a 0+123.00; rampa de 6.4 % en 1.65 m
+[ERROR] PUERTA EJE-02 0+140.00: PU-2039 Puerta: umbral 0.030 m DEBAJO de la vereda (enterrada). bajar la vereda frente a la puerta a 3822.758 (2 cm bajo el umbral) con transición a ambos lados, o coordinar con el propietario
+[AVISO] ELEMENTO EJE-01 0+060.00: BZ-3001 Buzón (tapa): tapa 0.362 m ARRIBA del diseño. bajar la tapa 0.362 m hasta 3821.400
+[AVISO] ELEMENTO EJE-01 0+100.00: PO-3005 Poste: en vereda, paso libre 1.05 m. dejar como está o reubicar junto al sardinel
+[AVISO] ELEMENTO EJE-01 0+118.00: SEN-3014 Señal / letrero: en vereda, paso libre 1.25 m. dejar como está o reubicar junto al sardinel
+[AVISO] ELEMENTO EJE-01 0+150.00: CLZ-3013 Caja de luz / telefonía: tapa 0.040 m ARRIBA del diseño. bajar la tapa 0.040 m hasta 3822.165
+[AVISO] COCHERA EJE-01 0+170.00: CO-2078/2074 Cochera 3.00 m: umbral 0.025 m sobre la vereda. rebajar sardinel a 3821.858 de 0+168.50 a 0+171.50; rampa de 10.7 % en 1.63 m
+[AVISO] ELEMENTO EJE-01 0+190.00: BZ-3002 Buzón (tapa): tapa 0.411 m ARRIBA del diseño. bajar la tapa 0.411 m hasta 3821.740
+[AVISO] VEREDA EJE-01 0+200.00: lado DER de 0+200.00 a 0+210.00: CA a 1.30 m del sardinel (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
+[AVISO] ELEMENTO EJE-02 0+050.00: BZ-3003 Buzón (tapa): tapa 0.312 m ARRIBA del diseño. bajar la tapa 0.312 m hasta 3821.620
+[AVISO] ELEMENTO EJE-02 0+052.00: CAG-3012 Caja de agua / medidor: tapa 0.050 m DEBAJO del diseño. subir la tapa 0.050 m hasta 3821.749
+[AVISO] ELEMENTO EJE-02 0+070.00: PO-3007 Poste: en vereda, paso libre 1.15 m. dejar como está o reubicar junto al sardinel
+[AVISO] ELEMENTO EJE-02 0+080.00: GR-3010 Grifo contra incendio: en vereda, paso libre 1.03 m. dejar como está o reubicar junto al sardinel
+[AVISO] VEREDA EJE-02 0+150.00: lado DER de 0+150.00 a 0+190.00: CA a 1.39 m del sardinel (diseño 1.50 m, mínimo 1.20 m); se recortó la vereda.
+[AVISO] ELEMENTO EJE-02 0+175.00: BZ-3004 Buzón (tapa): tapa 1.254 m DEBAJO del diseño. subir la tapa 1.254 m hasta 3823.120
+[AVISO] ELEMENTO EJE-02 0+180.00: PO-3008 Poste: en vereda, paso libre 1.15 m. dejar como está o reubicar junto al sardinel
 [INFO] CRUCE EJE-02 0+100.00: cruza EJE-01 en 0+130.00 (ángulo 90.0°). Rasante principal 3822.220, secundaria 3822.220, diferencia +0.000 m. Esquinas y chaflanes: pendiente (siguiente fase).

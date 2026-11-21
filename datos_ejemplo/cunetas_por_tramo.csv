@@ -1,4 +1,2 @@
 eje_id,lado,prog_ini,prog_fin,ancho_cm,profundidad_cm,nota
-EJE-01,AMBOS,0.000,250.000,40,10,Sección estándar
-EJE-02,AMBOS,0.000,200.000,40,10,Sección estándar
 EJE-02,DER,150.000,200.000,50,15,Tramo de hondonada: cuneta mayor

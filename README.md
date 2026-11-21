@@ -1,89 +1,78 @@
-# Corredor Simple: pistas y veredas para Civil 3D
+# Corredor Simple: diseño de pistas y veredas
 
-Con tres datos (el **eje** en planta, el **perfil** de rasante y la **sección típica** con sus capas)
-la app arma el corredor completo de cada calle de una malla urbana. Entrega:
+Programa para topógrafos e ingenieros de obras de pistas y veredas urbanas. Con el **levantamiento
+codificado**, el **eje**, el **perfil** y la **sección típica**, arma el corredor de cada calle y entrega:
 
-- coordenadas y cotas de todos los puntos de la sección (eje, bordes de calzada, cuneta, sardinel,
-  vereda y pie de fachada), cada 10 m y en cada cambio de pendiente;
-- cotas de cada capa y tablas de campo con la lectura de mira;
-- avisos de vereda que choca con una fachada, de puertas que quedarían enterradas y de cocheras;
-- corte, relleno (área media) y volumen de material por capa;
-- **salidas para Civil 3D 2025**: LandXML (alineamientos, perfiles y superficies nativas), DXF 3D
-  con hojas de secciones y perfil, y puntos en formato PNEZD;
-- informe en Excel y PDF, y CSV para la estación total.
+- **Secciones transversales** listas para revisar: tramas por material, flechas de anchos y
+  pendientes, cotas, rótulo de cada capa, y corte y relleno sombreados.
+- **Perfil longitudinal con guitarra**: cota de terreno, cota de rasante, altura de corte o relleno y
+  progresiva.
+- **Interferencias**: puertas y cocheras enterradas, tapas de buzones y cajas a nivelar, y postes,
+  árboles o grifos en calzada, cuneta, sardinel o vereda, con su paso libre.
+- **Veredas** recortadas automáticamente donde la casa o el muro no dejan el ancho de diseño.
+- **Movimiento de tierras**: áreas, volúmenes por área media, curva de masa, eliminación con
+  esponjamiento, material de préstamo y volumen de cada capa (losa, base, subbase, pedraplén…).
+- **BM numerados y ubicados** respecto a las calles (progresiva, lado y distancia al eje).
+- **Puntos de replanteo** por superficie (terminado y cada capa) con lectura de mira, exportables
+  a la estación total.
+- Informe en **Excel** y **PDF**.
 
-![Modelo 3D](docs/capturas/04_modelo3d.png)
+![Revisión de sección](docs/capturas/05_seccion_puerta_PU_0+085.png)
 
-## Cómo usarla
+## Cómo empezar
 
-**Opción 1, sin instalar nada aparte de Python.** Instala Python 3.12 desde python.org (marca
-*tcl/tk* y *Add to PATH*) y haz doble clic en `iniciar.bat`.
+1. Instala Python 3.12 desde python.org (marca *tcl/tk* y *Add to PATH*).
+2. Haz doble clic en `iniciar.bat`, o crea el ejecutable con `construir_exe.bat`.
+3. Pulsa **Cargar ejemplo** y luego **CALCULAR (F5)**.
 
-**Opción 2, crear el ejecutable.** Haz doble clic en `construir_exe.bat`. Corre las pruebas y deja
-el programa en `dist\CorredorSimple\CorredorSimple.exe`.
+### Flujo de trabajo
 
-**Opción 3, por consola, sin ventana.**
+| Pestaña | Qué haces |
+|---|---|
+| **1 · Levantamiento** | Importas tu archivo de la estación total (`punto, este, norte, cota, código`). La app interpreta los códigos (ver **[docs/CODIGOS.md](docs/CODIGOS.md)**) y muestra cada tipo con su color y símbolo. La lista de etiquetas se puede editar. |
+| **2 · Calles y ejes** | Una fila por calle: bombeo, ancho de calzada y ancho de vereda. El eje se define con *origen + azimut + longitud*, con números de punto del levantamiento o **con clics en la planta**. El perfil va por tramos encadenados: editas la pendiente o la cota final, y con *✂ Partir* agregas un quiebre. La vista previa se actualiza al instante. |
+| **3 · Sección y capas** | Capas de calzada y de vereda (cm), cuneta por tramo y todos los parámetros. Los normativos aparecen en rojo hasta que los confirmes. |
+| **4 · Revisión** | Sección en cualquier progresiva (con ◀ ▶ o *Ir a*), perfil con guitarra, planta (un clic abre la sección) y 3D. A la derecha, la ficha de la sección con las cotas de cada punto. |
+| **5 · Interferencias** | Tabla de puertas, cocheras y elementos con su estado y qué hacer. Doble clic abre la sección. |
+| **6 · Movimiento de tierras** | Tabla por calle o resumen, gráfico de áreas y curva de masa, y partidas para el metrado. |
+| **7 · Puntos y BM** | Los BM con su ubicación y los puntos de replanteo filtrados por calle, superficie y código. Se exportan o copian a Excel. |
+| **8 · Exportar** | Excel, PDF y CSV. LandXML y DXF para Civil 3D quedan para la siguiente etapa. |
 
-```bash
-python CorredorSimple.py calcular datos_ejemplo salida BM-01 1.425
-```
+Cuentas verificadas a mano: **[docs/VERIFICACION.md](docs/VERIFICACION.md)** (23 pruebas automáticas:
+`python -m pytest`).
 
-### Pasos en la ventana
+## Supuestos de diseño (confírmalos)
 
-1. **Cargar ejemplo** o **Abrir proyecto**: el proyecto es una carpeta con los CSV (ver `datos_ejemplo/`).
-2. Pestaña **1. Levantamiento**: importar terreno, fachadas, puertas/cocheras y BM.
-3. Pestaña **2. Calles**: una fila por calle (nombre, bombeo %, ancho de calzada, ancho de vereda).
-   - El eje se define con el **punto de origen + azimut + longitud** o con vértices.
-   - El perfil se define por tramos (progresiva, cota inicial, pendiente %).
-   - Edición con doble clic.
-4. Pestaña **3. Capas**: capas de calzada y de vereda (cm), la cuneta básica y todos los parámetros.
-5. **CALCULAR**.
-6. Pestaña **4. Modelo 3D y vistas**: 3D (girar con el mouse), planta, perfil y sección en cualquier progresiva.
-7. Pestaña **5. Movimiento de tierras**: tabla por calle y resumen total, con exportación a Excel o PDF.
-8. Pestaña **6. Exportar y avisos**: BM y lectura atrás para la lectura de mira, **EXPORTAR TODO**
-   y la lista de avisos.
-
-Cómo llevar todo a Civil 3D y qué comparar: **[docs/CIVIL3D.md](docs/CIVIL3D.md)**.
-Cuentas verificadas a mano: **[docs/VERIFICACION.md](docs/VERIFICACION.md)**.
-
-## Consideraciones de diseño (supuestos que conviene confirmar)
-
-| Tema | Lo que hace la app | Dónde se cambia |
-|---|---|---|
-| Sección | Calzada con bombeo desde el eje. Cuneta en **V** de 0.40 × 0.10 m **fuera** de la calzada. Sardinel de 0.15 m de ancho con **cara vertical** de 0.15 m sobre el borde de calzada. Vereda de 1.50 m que sube 2 % hacia la fachada. | `calles.csv`, pestaña 3 |
-| Capas de calzada | Paralelas a la rasante (siguen el bombeo). La losa ocupa solo la calzada. Las capas granulares siguen bajo la cuneta y el sardinel. | pestaña 3 |
-| Capas de vereda | Paralelas a la vereda, desde el sardinel hasta la fachada. | pestaña 3 |
-| Cuneta y sardinel | Bloque de concreto entre el borde de calzada y la vereda, apoyado en la base. Se metra aparte. | — |
-| Subrasante (corte/relleno) | Fondo de la última capa de calzada (en el ejemplo 0.66 m bajo la rasante) y, bajo la vereda, fondo de la base de vereda. Se metra de fachada a fachada. | — |
-| Fachadas | Rayo perpendicular al eje desde el borde de vereda. Si la fachada está más cerca que el ancho de diseño, la vereda **se recorta** (o solo se avisa) y se marca **ERROR** si queda bajo el mínimo. | `modo_fachada`, `tolerancia_fachada`, `vereda_ancho_min` |
-| Puertas | Umbral − cota de vereda proyectada en la fachada. Si es negativo, sale aviso de "puerta enterrada". En las cocheras se avisa del rebaje de sardinel (se define en campo). | `umbrales.csv` |
-| Cruces | La calle que va **primera** en la lista es la principal y conserva su calzada. En el cruce no lleva vereda ni sardinel. La secundaria se interrumpe en la cara de sardinel de la principal, para no metrar dos veces. Se avisa si las rasantes no coinciden en el cruce. | orden de la tabla de calles |
-| Secciones | Cada 10 m, más inicio, fin, quiebres de pendiente, vértices, puertas y límites del cruce. | `intervalo_secciones` |
-| Normativa | Pendiente máxima y mínima y ancho mínimo de vereda quedan como **parámetros por confirmar**. No hay valores fijos en el código. | pestaña 3 |
-| Terreno | Triangulación (TIN) de los puntos, descartando triángulos de más de 25 m. | `arista_max_tin` |
-| Civil 3D | LandXML 1.2 y DXF AutoCAD 2018. En las superficies TIN la cara vertical del sardinel se inclina 5 mm, porque una TIN no admite paredes verticales. | — |
-
-**Pendiente para la siguiente fase:** esquinas y chaflanes en los cruces, curvas horizontales y
-verticales, secciones distintas por tramo, rampas de cochera y un complemento .NET para crear el
-corredor nativo dentro de Civil 3D.
+| Tema | Lo que hace la app |
+|---|---|
+| Sección | Calzada con bombeo desde el eje. Cuneta en V fuera de la calzada. Sardinel con cara vertical. Vereda que sube hacia la fachada. |
+| Capas | Paralelas a la rasante. La losa ocupa solo la calzada; las capas granulares siguen bajo la cuneta y el sardinel. Las de vereda son paralelas a la vereda. |
+| Subrasante | Fondo de la última capa (calzada) y fondo de la base de vereda. Corte y relleno de fachada a fachada. |
+| Fachadas | Se toma la línea CA, MU o LP más cercana en dirección perpendicular al eje. La vereda se recorta (o solo se avisa) y es ERROR si queda bajo el mínimo. |
+| Puertas | Umbral − vereda proyectada en la fachada: negativo = enterrada. Se propone bajar la vereda 2 cm bajo el umbral. |
+| Cocheras | Dos puntos (COI y COF). Se propone rebajar el sardinel (3 cm sobre el borde de calzada) y se revisa la pendiente de la rampa (máx. 12 %, por confirmar). |
+| Tapas | Se comparan con la superficie de diseño en su ubicación; tolerancia de 2 cm. |
+| Obstáculos | Error en calzada, cuneta o sardinel. En vereda se revisa el paso libre (mín. 0.90 m, por confirmar). |
+| Cruces | La primera calle de la lista manda. La secundaria se interrumpe en la cara de sardinel de la principal. Las esquinas quedan para la siguiente fase. |
+| Tierras | Área media cada 10 m más puntos notables. Esponjamiento 25 %, contracción del relleno 15 % y reutilización 0 % (editables). |
 
 ## Estructura
 
 ```
-CorredorSimple.py         entrada (ventana o consola)
+CorredorSimple.py      entrada (ventana o consola: python CorredorSimple.py calcular <proyecto> <salida> [BM lectura])
 corredor/
-  modelo.py               datos y parámetros por defecto
-  datos.py                lectura, validación y guardado de CSV
-  geometria.py            eje, progresivas, rasante
-  terreno.py              superficie TIN del levantamiento
-  seccion.py              sección típica, capas, corte y relleno
-  motor.py                corredor, cruces, fachadas, puertas, volúmenes
-  replanteo.py            tablas de eje, puntos y capas con lectura de mira
-  malla.py                superficies 3D (para el 3D, DXF y LandXML)
-  graficos.py             planta, perfil, sección, 3D
-  exportar.py             CSV, LandXML, DXF, Excel, PDF
-  app.py                  ventana (Tkinter)
-datos_ejemplo/            4 cuadras de prueba (y su generador en herramientas/)
-pruebas/                  pruebas automáticas (python -m pytest)
-docs/                     diseño, verificación, guía de Civil 3D, capturas
+  codigos.py           lista de etiquetas de campo
+  levantamiento.py     interpretación del levantamiento (líneas, puertas, cocheras, elementos, BM)
+  datos.py             lectura, validación y guardado del proyecto
+  geometria.py         eje, progresivas, rasante
+  terreno.py           superficie TIN
+  seccion.py           sección típica, capas, corte y relleno
+  motor.py             corredor, cruces, fachadas, interferencias, BM, volúmenes, balance
+  replanteo.py         tablas de eje, puntos y capas con lectura de mira
+  graficos.py          planta, sección, perfil con guitarra, tierras y 3D
+  exportar.py          Excel, PDF, CSV (y LandXML/DXF para Civil 3D)
+  app.py               interfaz
+datos_ejemplo/         proyecto de prueba
+pruebas/               pruebas automáticas
+docs/                  códigos, verificación, guía Civil 3D, capturas
 ```

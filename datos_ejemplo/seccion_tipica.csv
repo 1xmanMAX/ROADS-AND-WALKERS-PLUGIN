@@ -1,11 +1,10 @@
 parametro,valor,unidad,descripcion
-num_carriles,2,-,Número de carriles
-cuneta_ancho,40,cm,"Cuneta básica: ancho (solo geométrica, sin diseño hidráulico)"
-cuneta_profundidad,10,cm,Cuneta básica: profundidad bajo el borde de calzada
-sardinel_ancho,15,cm,Ancho de la cara superior del sardinel
-sardinel_altura,15,cm,Desnivel entre borde de calzada y vereda terminada
-vereda_pendiente,2.0,%,"Pendiente transversal de vereda, cae hacia la calzada"
-intervalo_secciones,10,m,Intervalo entre secciones de cálculo
-pendiente_long_max,8.0,%,PARÁMETRO A CONFIRMAR con norma/expediente
-pendiente_long_min,0.5,%,PARÁMETRO A CONFIRMAR con norma/expediente
-vereda_ancho_min,120,cm,PARÁMETRO A CONFIRMAR con norma/expediente
+cuneta_ancho,40,cm,
+cuneta_profundidad,10,cm,
+sardinel_ancho,15,cm,
+sardinel_altura,15,cm,
+vereda_pendiente,2.0,%,
+intervalo_secciones,10,m,
+pendiente_long_max,8.0,%,A CONFIRMAR
+pendiente_long_min,0.5,%,A CONFIRMAR
+vereda_ancho_min,120,cm,A CONFIRMAR

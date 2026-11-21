@@ -438,6 +438,37 @@ def exportar_excel(res, ruta, ai=None):
             c.font = Font(bold=True)
             if isinstance(c.value, float):
                 c.number_format = "0.000"
+    # interferencias, BM, balance, levantamiento
+    hoja("Interferencias", ["Nivel", "Tipo", "Id", "Elemento", "Eje", "Progresiva", "Lado", "Offset", "Zona",
+                            "Cota campo", "Cota diseño", "Diferencia", "Estado", "Qué hacer", "Este", "Norte"],
+         [[x["nivel"], x["tipo"], x["id"], x["nombre"], x["eje"], fmt_prog(x["prog"]) if x["prog"] is not None else "",
+           x["lado"], x["offset"], x["zona"], x["cota_campo"], x["cota_diseno"], x["diferencia"], x["estado"],
+           x["accion"], x["este"], x["norte"]] for x in res.interferencias], {4: 22, 13: 45, 14: 70})
+    ubic = {b["bm"].id: b["texto"] for b in res.bm_ubicacion}
+    hoja("BM", ["BM", "Punto", "Este", "Norte", "Cota", "Ubicación", "Descripción"],
+         [[b.id, b.punto, b.este, b.norte, b.cota, ubic.get(b.id, ""), b.descripcion] for b in proy.bms], {6: 70, 7: 30})
+    bt = res.balance_total()
+    filas = []
+    for txt, k in (("Excavación / corte en banco", "corte"), ("Relleno compactado", "relleno"),
+                   ("Corte reutilizado como relleno", "reutilizado"),
+                   (f"Eliminación de excedente (esponjamiento {proy.p('esponjamiento'):g} %)", "eliminacion"),
+                   (f"Material de préstamo (+{proy.p('contraccion_relleno'):g} %)", "prestamo")):
+        filas.append([txt, "m3"] + [rc.balance.get(k, 0.0) for rc in res.calles.values()] + [bt.get(k, 0.0)])
+    for n in capas_n:
+        filas.append([n, "m3"] + [rc.materiales.get(n, 0.0) for rc in res.calles.values()] + [mt.get(n, 0.0)])
+    hoja("Metrados", ["Partida", "Und"] + list(res.calles.keys()) + ["TOTAL"], filas, {1: 55})
+    if proy.levantamiento:
+        cat = proy.catalogo
+        filas = []
+        for q in proy.levantamiento:
+            c = cat.interpretar(q.codigo)[0] if cat else None
+            filas.append([q.numero, q.este, q.norte, q.cota, q.codigo, c.nombre if c else "desconocido",
+                          c.tipo if c else ""])
+        hoja("Levantamiento", ["Punto", "Este", "Norte", "Cota", "Código", "Interpretado como", "Tipo"], filas, {6: 34})
+        if cat:
+            hoja("Códigos", ["Código", "Nombre", "Tipo", "Terreno", "Revisión", "Cómo tomarlo"],
+                 [[c.codigo, c.nombre, c.tipo, "si" if c.terreno else "no", c.regla, c.uso] for c in cat],
+                 {2: 34, 6: 80})
     if ai is not None:
         ws = wb["Resumen"]
         ws.append([])
@@ -453,87 +484,140 @@ def exportar_pdf(res, ruta):
     import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
 
-    from .graficos import dibujar_perfil, dibujar_planta, dibujar_seccion
+    from .graficos import dibujar_perfil, dibujar_planta, dibujar_seccion, dibujar_tierras
     proy = res.proyecto
+    A3 = (16.54, 11.69)
+    A4H = (11.69, 8.27)
     capas_n = [cp.nombre for cp in proy.capas_de("calzada")] + ["Concreto cuneta y sardinel"] + \
               [cp.nombre for cp in proy.capas_de("vereda")]
-    with PdfPages(ruta) as pdf:
-        # portada / resumen
-        fig = plt.figure(figsize=(11.69, 8.27))
-        fig.text(0.05, 0.93, f"Informe de movimiento de tierras y materiales — {proy.nombre}", fontsize=16, weight="bold")
-        fig.text(0.05, 0.89, f"Generado {dt.datetime.now():%d/%m/%Y %H:%M} con Corredor Simple. Método: área media "
-                             f"entre secciones cada {proy.p('intervalo_secciones'):g} m + quiebres y puntos notables.",
-                 fontsize=9)
-        ax = fig.add_axes([0.05, 0.35, 0.9, 0.5])
+
+    def tabla(fig, rect, filas, cols, fs=8, escala=1.4, titulo=None):
+        ax = fig.add_axes(rect)
         ax.axis("off")
-        filas = []
-        for k, rc in res.calles.items():
-            filas.append([k, rc.calle.nombre, f"{rc.alin.longitud:.2f}", f"{rc.vol_corte:.2f}", f"{rc.vol_relleno:.2f}",
-                          f"{rc.vol_neto:.2f}"])
-        filas.append(["TOTAL", "", f"{sum(rc.alin.longitud for rc in res.calles.values()):.2f}",
-                      f"{res.total('vol_corte'):.2f}", f"{res.total('vol_relleno'):.2f}",
-                      f"{res.total('vol_corte') - res.total('vol_relleno'):.2f}"])
-        tb = ax.table(cellText=filas, colLabels=["Eje", "Calle", "Longitud m", "Corte m³", "Relleno m³", "Neto m³"],
-                      loc="upper center", cellLoc="center")
-        tb.scale(1, 1.6)
+        if titulo:
+            ax.set_title(titulo, fontsize=11, weight="bold", loc="left", color="#1a5276")
+        if not filas:
+            ax.text(0, 0.9, "(sin datos)", fontsize=9)
+            return
+        tb = ax.table(cellText=filas, colLabels=cols, loc="upper center", cellLoc="center")
+        tb.auto_set_font_size(False)
+        tb.set_fontsize(fs)
+        tb.auto_set_column_width(list(range(len(cols))))
+        tb.scale(1, escala)
+        for (r, c_), cel in tb.get_celld().items():
+            if r == 0:
+                cel.set_facecolor("#1a5276")
+                cel.set_text_props(color="white", weight="bold")
+            elif r % 2 == 0:
+                cel.set_facecolor("#f2f4f4")
+        return tb
+
+    def pie(fig, n):
+        fig.text(0.5, 0.012, f"Corredor Simple · {proy.nombre} · {dt.datetime.now():%d/%m/%Y}  —  pág. {n}",
+                 ha="center", fontsize=7, color="#7f8c8d")
+
+    pag = [0]
+
+    def guardar(pdf, fig):
+        pag[0] += 1
+        pie(fig, pag[0])
+        pdf.savefig(fig)
+        plt.close(fig)
+
+    with PdfPages(ruta) as pdf:
+        # 1. resumen
+        fig = plt.figure(figsize=A4H)
+        fig.text(0.05, 0.93, f"INFORME DE DISEÑO — {proy.nombre}", fontsize=17, weight="bold", color="#1a5276")
+        fig.text(0.05, 0.895, "Pistas y veredas: corredor, movimiento de tierras, materiales, interferencias y BM",
+                 fontsize=10)
+        b = res.balance_total()
+        ne = sum(x["nivel"] == "ERROR" for x in res.interferencias)
+        na = sum(x["nivel"] == "AVISO" for x in res.interferencias)
+        filas = [[k, rc.calle.nombre, f"{rc.alin.longitud:.2f}", f"{rc.calle.bombeo_pct:.1f}",
+                  f"{rc.calle.ancho_calzada:.2f}", f"{rc.calle.ancho_vereda:.2f}", f"{rc.vol_corte:.2f}",
+                  f"{rc.vol_relleno:.2f}"] for k, rc in res.calles.items()]
+        filas.append(["TOTAL", "", f"{sum(rc.alin.longitud for rc in res.calles.values()):.2f}", "", "", "",
+                      f"{b['corte']:.2f}", f"{b['relleno']:.2f}"])
+        tabla(fig, [0.05, 0.55, 0.9, 0.3], filas, ["Eje", "Calle", "Longitud m", "Bombeo %", "Calzada m", "Vereda m",
+                                                  "Corte m³", "Relleno m³"], titulo="Calles")
         mt = res.materiales_total()
-        filas = [[n] + [f"{rc.materiales.get(n, 0):.2f}" for rc in res.calles.values()] + [f"{mt.get(n, 0):.2f}"]
-                 for n in capas_n]
-        ax2 = fig.add_axes([0.05, 0.05, 0.9, 0.3])
-        ax2.axis("off")
-        tb = ax2.table(cellText=filas, colLabels=["Material (m³)"] + list(res.calles.keys()) + ["TOTAL"],
-                       loc="upper center", cellLoc="center")
-        tb.scale(1, 1.4)
-        pdf.savefig(fig)
-        plt.close(fig)
-        # planta
-        fig, ax = plt.subplots(figsize=(11.69, 8.27))
+        filas = [["Eliminación de excedente (esponjado)", f"{b['eliminacion']:.2f}"],
+                 ["Material de préstamo", f"{b['prestamo']:.2f}"]] + [[n, f"{mt.get(n, 0):.2f}"] for n in capas_n]
+        tabla(fig, [0.05, 0.08, 0.45, 0.42], filas, ["Partida / material", "m³"], titulo="Metrados")
+        fig.text(0.56, 0.45, "Revisión de elementos", fontsize=11, weight="bold", color="#1a5276")
+        fig.text(0.56, 0.40, f"{ne} errores (rojo)   ·   {na} avisos (naranja)", fontsize=11,
+                 color="#c0392b" if ne else "#1e8449")
+        fig.text(0.56, 0.35, f"{len(res.interferencias)} puertas, cocheras y elementos revisados", fontsize=9)
+        fig.text(0.56, 0.31, f"{len(proy.bms)} BM: " + ", ".join(f"{x.id} = {x.cota:.3f}" for x in proy.bms), fontsize=9)
+        guardar(pdf, fig)
+        # 2. planta
+        fig, ax = plt.subplots(figsize=A3)
         dibujar_planta(ax, res)
-        pdf.savefig(fig)
-        plt.close(fig)
+        fig.tight_layout()
+        guardar(pdf, fig)
+        # 3. por calle
         for k, rc in res.calles.items():
-            fig, ax = plt.subplots(figsize=(11.69, 8.27))
-            dibujar_perfil(ax, rc, res)
-            pdf.savefig(fig)
-            plt.close(fig)
-            secs = [s for s in rc.secciones if not s.omitida and s.tipo in ("INICIO", "QUIEBRE", "FIN", "PUERTA", "COCHERA")]
-            secs = (secs or [s for s in rc.secciones if not s.omitida])[:4]
-            fig, axs = plt.subplots(len(secs), 1, figsize=(11.69, 8.27), squeeze=False)
-            for a_, s in zip(axs[:, 0], secs):
-                dibujar_seccion(a_, s, proy, etiquetas=False)
+            fig = plt.figure(figsize=A3)
+            dibujar_perfil(fig, rc, res)
+            guardar(pdf, fig)
+            fig = plt.figure(figsize=A4H)
+            dibujar_tierras(fig, rc)
             fig.tight_layout()
-            pdf.savefig(fig)
-            plt.close(fig)
+            guardar(pdf, fig)
+            notables = [s for s in rc.secciones if not s.omitida and s.tipo in
+                        ("INICIO", "QUIEBRE", "PUERTA", "COCHERA", "FIN")]
+            mx = max((s for s in rc.secciones if not s.omitida), key=lambda s: s.area_corte + s.area_relleno)
+            if mx not in notables:
+                notables.append(mx)
+            for s in sorted(notables, key=lambda s: s.prog)[:8]:
+                fig, ax = plt.subplots(figsize=A4H)
+                dibujar_seccion(ax, s, proy, res)
+                fig.tight_layout()
+                guardar(pdf, fig)
             filas = [[fmt_prog(t["desde"]), fmt_prog(t["hasta"]), f"{t['distancia']:.2f}", f"{t['ac2']:.3f}",
                       f"{t['ar2']:.3f}", f"{t['vol_corte']:.2f}", f"{t['vol_relleno']:.2f}", f"{t['acum_corte']:.2f}",
                       f"{t['acum_relleno']:.2f}"] for t in rc.tramos_volumen]
-            for i in range(0, max(1, len(filas)), 30):
+            for i in range(0, max(1, len(filas)), 32):
                 fig = plt.figure(figsize=(8.27, 11.69))
-                fig.text(0.05, 0.96, f"Movimiento de tierras {k} {rc.calle.nombre}", fontsize=13, weight="bold")
-                ax = fig.add_axes([0.03, 0.05, 0.94, 0.88])
-                ax.axis("off")
-                parte = filas[i:i + 30]
-                if i + 30 >= len(filas):
-                    parte = parte + [["TOTAL", "", "", "", "", f"{rc.vol_corte:.2f}", f"{rc.vol_relleno:.2f}",
-                                      "Neto", f"{rc.vol_neto:.2f}"]]
-                tb = ax.table(cellText=parte, colLabels=["Desde", "Hasta", "Dist.", "A. corte", "A. relleno",
-                                                         "V. corte", "V. relleno", "Acum. C", "Acum. R"],
-                              loc="upper center", cellLoc="center")
-                tb.auto_set_font_size(False)
-                tb.set_fontsize(8)
-                tb.scale(1, 1.35)
-                pdf.savefig(fig)
-                plt.close(fig)
-        # avisos
-        fig = plt.figure(figsize=(11.69, 8.27))
-        fig.text(0.04, 0.95, "Avisos de revisión", fontsize=14, weight="bold")
+                parte = filas[i:i + 32]
+                if i + 32 >= len(filas):
+                    parte = parte + [["TOTAL", "", "", "", "", f"{rc.vol_corte:.2f}", f"{rc.vol_relleno:.2f}", "", ""]]
+                tabla(fig, [0.04, 0.05, 0.92, 0.88], parte, ["Desde", "Hasta", "Dist.", "A. corte", "A. relleno",
+                                                            "V. corte", "V. relleno", "Acum. C", "Acum. R"],
+                      fs=7.5, escala=1.3, titulo=f"Movimiento de tierras {k} {rc.calle.nombre}")
+                guardar(pdf, fig)
+        # 4. interferencias
+        filas = [[x["nivel"], x["id"], x["nombre"][:22], x["eje"], fmt_prog(x["prog"]) if x["prog"] is not None else "",
+                  x["lado"], x["zona"].lower()[:10], f3(x["cota_campo"]), f3(x["cota_diseno"]),
+                  f"{x['diferencia']:+.3f}" if x["diferencia"] is not None else "", x["estado"][:48]]
+                 for x in res.interferencias]
+        for i in range(0, max(1, len(filas)), 28):
+            fig = plt.figure(figsize=A4H)
+            tb = tabla(fig, [0.02, 0.05, 0.96, 0.86], filas[i:i + 28],
+                       ["Nivel", "Id", "Elemento", "Eje", "Prog.", "Lado", "Zona", "Cota campo", "Cota diseño", "Dif.",
+                        "Estado"], fs=7, escala=1.25, titulo="Interferencias: puertas, cocheras y elementos")
+            if tb is not None:
+                for (r, c_), cel in tb.get_celld().items():
+                    if r > 0 and c_ == 0:
+                        cel.set_text_props(color={"ERROR": "#c0392b", "AVISO": "#b9770e"}.get(cel.get_text().get_text(),
+                                                                                              "#1e8449"), weight="bold")
+            guardar(pdf, fig)
+        # 5. BM
+        fig = plt.figure(figsize=A4H)
+        ubic = {b_["bm"].id: b_["texto"] for b_ in res.bm_ubicacion}
+        tabla(fig, [0.03, 0.4, 0.94, 0.5], [[x.id, x.punto, f3(x.este), f3(x.norte), f3(x.cota), ubic.get(x.id, "")]
+                                            for x in proy.bms],
+              ["BM", "Punto", "Este", "Norte", "Cota", "Ubicación"], fs=8, titulo="BM de la obra")
+        guardar(pdf, fig)
+        # 6. avisos
+        fig = plt.figure(figsize=A4H)
+        fig.text(0.04, 0.95, "Avisos del cálculo", fontsize=13, weight="bold", color="#1a5276")
         y = 0.91
-        for a in res.avisos[:45]:
-            col = {"ERROR": "#c0392b", "AVISO": "#b9770e"}.get(a.nivel, "#1e8449")
-            fig.text(0.04, y, a.texto()[:190], fontsize=7, color=col)
-            y -= 0.019
-        pdf.savefig(fig)
-        plt.close(fig)
+        for a in res.avisos[:48]:
+            fig.text(0.04, y, a.texto()[:200], fontsize=6.8,
+                     color={"ERROR": "#c0392b", "AVISO": "#b9770e"}.get(a.nivel, "#1e8449"))
+            y -= 0.018
+        guardar(pdf, fig)
     return ruta
 
 

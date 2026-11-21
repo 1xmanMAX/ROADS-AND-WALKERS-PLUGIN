@@ -22,6 +22,15 @@ PARAMETROS = {
     "modo_fachada": ("recortar", "-", "recortar = ajusta la vereda al ancho disponible; avisar = solo avisa"),
     "paso_terreno": (0.10, "m", "Paso de muestreo del terreno en cada sección (corte/relleno)"),
     "arista_max_tin": (25.0, "m", "Lado máximo de triángulo del terreno (evita triángulos falsos)"),
+    "separacion_max_linea": (30.0, "m", "Distancia máxima entre dos puntos seguidos de una misma línea (CA, MU, LP)"),
+    "busqueda_elementos": (15.0, "m", "Distancia máxima al eje para asignar puertas y elementos a una calle"),
+    "esponjamiento": (25.0, "%", "Esponjamiento del material de corte al eliminarlo (A CONFIRMAR según suelo)"),
+    "contraccion_relleno": (15.0, "%", "Material extra para relleno compactado (A CONFIRMAR según material)"),
+    "reutilizacion_corte": (0.0, "%", "Parte del corte que se reutiliza como relleno (0 = todo se elimina)"),
+    "tolerancia_tapas": (2.0, "cm", "Tapas de buzón/cajas dentro de esta diferencia se consideran a nivel"),
+    "paso_libre_min": (90.0, "cm", "Paso libre mínimo en vereda junto a postes/árboles (A CONFIRMAR, A.120)"),
+    "pendiente_rampa_max": (12.0, "%", "Pendiente máxima de rampa de cochera en vereda (A CONFIRMAR)"),
+    "rebaje_sardinel": (3.0, "cm", "Altura del sardinel rebajado frente a cocheras sobre el borde de calzada"),
 }
 
 TEXTO = {"modo_fachada"}
@@ -60,10 +69,12 @@ class Capa:
 @dataclass
 class LineaFachada:
     linea_id: str
-    eje_id: str
-    lado: str            # IZQ / DER
+    eje_id: str          # puede quedar vacío: la línea vale para cualquier calle
+    lado: str            # IZQ / DER / "" (automático)
     tipo: str
-    puntos: list = field(default_factory=list)
+    puntos: list = field(default_factory=list)   # [(este, norte, tipo)]
+    cotas: list = field(default_factory=list)    # cota de cada punto (si viene del levantamiento)
+    numeros: list = field(default_factory=list)  # número de punto de cada vértice
 
 
 @dataclass
@@ -76,6 +87,8 @@ class Umbral:
     cota: float
     ancho: float
     tipo: str            # PUERTA / COCHERA
+    extremos: list = field(default_factory=list)   # cochera: [(e, n, z), (e, n, z)]
+    nota: str = ""
 
 
 @dataclass
@@ -99,12 +112,26 @@ class PuntoTerreno:
 
 
 @dataclass
+class Elemento:
+    id: str              # número de punto
+    codigo: str          # código completo (ej. BZ, PO3)
+    tipo_codigo: str     # código del catálogo (BZ, PO...)
+    nombre: str
+    regla: str           # nivelar / obstaculo / ninguna
+    este: float
+    norte: float
+    cota: float
+    nota: str = ""
+
+
+@dataclass
 class BM:
     id: str
     este: float
     norte: float
     cota: float
     descripcion: str = ""
+    punto: str = ""
 
 
 @dataclass
@@ -118,6 +145,10 @@ class Proyecto:
     umbrales: list = field(default_factory=list)
     terreno: list = field(default_factory=list)
     bms: list = field(default_factory=list)
+    levantamiento: list = field(default_factory=list)   # todos los puntos con su código
+    catalogo: object = None
+    elementos: list = field(default_factory=list)
+    avisos_levantamiento: list = field(default_factory=list)
 
     def capas_de(self, ambito):
         return sorted([c for c in self.capas if c.ambito == ambito], key=lambda c: c.orden)

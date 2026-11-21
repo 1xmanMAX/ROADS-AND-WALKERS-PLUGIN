@@ -1,78 +1,42 @@
-# Datos de ejemplo (Paso 1)
+# Proyecto de ejemplo
 
-Datos **ficticios pero realistas** para probar la app: 4 cuadras de una malla en
-el altiplano (cotas ~3820 m), coordenadas UTM WGS84 zona 19S. Se regeneran
-siempre iguales con:
+Son 4 cuadras de una malla en el altiplano (cotas alrededor de 3820 m), en UTM WGS84 19S. Los datos son
+ficticios pero realistas. Se regeneran con:
 
 ```bash
 python herramientas/generar_ejemplo.py
 ```
 
+| Archivo | Contenido |
+|---|---|
+| `levantamiento.csv` | **Levantamiento codificado**: 292 puntos con códigos de campo (ver `docs/CODIGOS.md`) |
+| `codigos.csv` | Lista de etiquetas: qué significa cada código |
+| `calles.csv` | Una fila por calle: nombre, bombeo %, ancho de calzada, ancho de vereda |
+| `ejes.csv` | Vértices del eje de cada calle (Este, Norte) y progresiva inicial |
+| `perfil.csv` | Tramos de rasante: desde, cota inicial, pendiente %, hasta |
+| `capas.csv` | Capas de calzada y vereda (cm) |
+| `seccion_tipica.csv` | Parámetros de la sección y de revisión |
+| `cunetas_por_tramo.csv` | Excepciones de cuneta: en EJE-02 lado derecho, de 0+150 a 0+200, la cuneta es de 0.50 × 0.15 m |
+
 ## Escenario
 
-```
-                 N
-                 ^        EJE-02 "Jr. Las Flores"  (0+000 al sur, 0+200 al norte)
-                 |        pendiente única +1.2 %
-        cuadra 3 | cuadra 4
-                 |
- EJE-01 ---------+-------------------->  "Jr. Los Andes" (0+000 al oeste, 0+250 al este)
-  0+000      0+130 (cruce = EJE-02 0+100)       quiebre de pendiente en 0+120
-        cuadra 1 | cuadra 2                     +1.5 % hasta 0+120, luego -0.8 %
-                 |
-```
-
-| Elemento | Valor de ejemplo |
-|---|---|
-| EJE-01 | recto, 250 m, azimut 80°, cruce en 0+130 |
-| EJE-02 | recto, 200 m, azimut 350° (perpendicular), cruce en 0+100 |
-| Rasante EJE-01 | 3820.500 en 0+000, +1.5 % → 3822.300 en 0+120, −0.8 % → 3821.260 en 0+250 |
-| Rasante EJE-02 | 3821.020 en 0+000, +1.2 % → 3823.420 en 0+200 (pasa por 3822.220 en el cruce, igual que EJE-01) |
-| Calzada | 7.20 m, 2 carriles, bombeo 2 % |
-| Cuneta | 0.40 × 0.10 m (en EJE-02 lado DER 0+150–0+200: 0.50 × 0.15 m) |
-| Sardinel | 0.15 m de ancho, 0.15 m de desnivel |
-| Vereda | 1.50 m, 2 % hacia la calzada |
-| Fachada nominal | a 5.65 m del eje (3.60 + 0.40 + 0.15 + 1.50) |
+- **EJE-01 Jr. Los Andes:** 250 m, sube +1.5 % hasta 0+120 y luego baja −0.8 %.
+- **EJE-02 Jr. Las Flores:** 200 m, sube +1.2 %. Cruza al EJE-01 en la 0+130 del EJE-01, que es su 0+100.
+- **Calles:** calzada de 7.20 m con bombeo de 2 %, cuneta de 0.40 × 0.10 m, sardinel de 0.15 m y vereda de 1.50 m.
 
 ## Casos de prueba incluidos a propósito
 
-| Caso | Dónde | Qué debe detectar la app |
+| Caso | Dónde | Resultado esperado |
 |---|---|---|
-| Muro adelantado | EJE-01 IZQ 0+040–0+060, a 5.30 m | vereda disponible 1.15 m (< 1.50) |
-| Fachada adelantada | EJE-01 DER 0+200–0+215, a 5.45 m | vereda disponible 1.30 m |
-| Escalón invadiendo | EJE-02 DER 0+020–0+032, a 5.05 m | vereda disponible 0.90 m (< mínimo) |
-| Puerta enterrada | PU-02 (EJE-01 IZQ 0+085) | umbral 8 cm **debajo** de la vereda |
-| Puerta enterrada | PU-04 (EJE-02 DER 0+140) | umbral 3 cm debajo |
-| Puertas correctas | PU-01, PU-03 | umbral 6 y 12 cm arriba |
-| Cochera | CO-01 (EJE-01 DER 0+170, 3.00 m) | umbral +2 cm; requiere rebaje de sardinel |
-| Quiebre de pendiente | EJE-01 0+120 | sección obligatoria en 0+120 |
-| Zona de relleno | EJE-02 0+165–0+185 (hondonada) | terreno bajo la subrasante → relleno |
-| Resto | — | corte de ~0.8–1.1 m bajo terreno |
-
-## Archivos
-
-| Archivo | Contenido |
-|---|---|
-| `ejes.csv` | vértices del eje en planta (Este, Norte) y progresiva inicial |
-| `perfil.csv` | tramos de rasante: progresiva inicio, cota inicio, pendiente %, progresiva fin |
-| `calles.csv` | una fila por calle: nombre, bombeo %, ancho de calzada, ancho de vereda |
-| `seccion_tipica.csv` | lo común a todas las calles: cuneta básica, sardinel, pendiente de vereda, intervalo y límites normativos (editables) |
-| `capas.csv` | capas de calzada y de vereda, de arriba hacia abajo, espesor en cm |
-| `cunetas_por_tramo.csv` | cuneta básica (ancho × profundidad) por defecto y excepciones por tramo |
-| `fachadas.csv` | polilíneas de límite de propiedad por eje y lado (FACHADA / MURO) |
-| `umbrales.csv` | puertas y cocheras con su cota de umbral levantada |
-| `terreno.csv` | 192 puntos del levantamiento (PENZD) cada 15 m, desde 3 m antes hasta 3 m después de cada calle: EJ eje, BC borde camino, PF pie de fachada, TN terreno |
-| `bm.csv` | 3 BMs con cota |
-
-**Convención de lados:** IZQ / DER mirando en el sentido de avance de las progresivas.
-El signo del desplazamiento (offset) es negativo a la izquierda y positivo a la derecha.
-
-**Suposición usada para generar los umbrales** (ver pregunta 2 en `docs/DISENO.md`):
-la vereda terminada junto al sardinel está 0.15 m sobre el borde de calzada, y
-sube 2 % hacia la fachada. Ejemplo PU-02 (EJE-01 0+085):
-
-- rasante en eje = 3820.500 + 0.015 × 85 = **3821.775**
-- borde de calzada = 3821.775 − 0.02 × 3.60 = **3821.703**
-- vereda en sardinel = 3821.703 + 0.15 = **3821.853**
-- vereda en fachada = 3821.853 + 0.02 × 1.50 = **3821.883**
-- umbral levantado = **3821.803** → queda 0.080 m **debajo** → aviso "puerta enterrada".
+| Muro adelantado (MU1) | EJE-01 izq. 0+040 a 0+060 | vereda de 1.15 m, ERROR (menor que el mínimo de 1.20 m) |
+| Escalón invadiendo (CA) | EJE-02 der. 0+020 a 0+032 | vereda de 0.90 m, ERROR |
+| Fachada adelantada | EJE-01 der. 0+200 a 0+215 | vereda de 1.30 m, AVISO |
+| Lote vacío (LP1) | EJE-02 izq. 0+150 a 0+190 | límite de propiedad |
+| Puertas enterradas (PU) | EJE-01 0+085 y EJE-02 0+140 | −0.080 y −0.030 m |
+| Cochera enterrada (COI/COF) | EJE-02 izq. 0+120 a 0+123 | −0.045 m |
+| Cochera correcta | EJE-01 der. 0+168.5 a 0+171.5 | +0.025 m, con rebaje de sardinel y rampa de 10.7 % |
+| Buzones (BZ) | en el eje de las dos calles | bajar o subir la tapa |
+| Poste en la cuneta | EJE-01 0+150 a +3.95 m | ERROR: reubicar |
+| Árbol en vereda | EJE-01 0+230 | paso libre de 0.85 m, ERROR |
+| Hondonada | EJE-02 0+165 a 0+185 | relleno |
+| BM1 a BM3 | junto a fachadas | numerados y ubicados por progresiva |
