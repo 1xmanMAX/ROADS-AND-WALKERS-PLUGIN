@@ -1570,15 +1570,22 @@ class App(tk.Tk):
         textos = [("excel", "📊 Informe Excel (resumen, secciones, puntos, capas, tierras, interferencias, BM)", True),
                   ("pdf", "📄 Informe PDF (planta, perfiles con guitarra, secciones, tierras, interferencias, BM)", True),
                   ("csv", "📍 CSV: eje progresiva-coordenada, estación total, tablas de campo con lectura de mira", True),
-                  ("landxml", "Civil 3D (más adelante): LandXML", False),
-                  ("dxf", "Civil 3D (más adelante): DXF 3D y hojas", False)]
+                  ("civil3d", "🏗 Civil 3D 2025: paquete para el complemento (comando CSIMPORTAR)", True),
+                  ("landxml", "Civil 3D: LandXML (alineamientos, perfiles, superficies) — alternativa sin complemento", False),
+                  ("dxf", "Civil 3D / AutoCAD: DXF 3D con hojas de secciones y perfil", False)]
         for i, (k, txt, val) in enumerate(textos):
             v = tk.BooleanVar(value=val)
             ttk.Checkbutton(g, text=txt, variable=v).grid(row=1 + i, column=1, sticky="w", pady=1)
             self.v_fmt[k] = v
         ttk.Button(g, text="💾  EXPORTAR", style="Grande.TButton", command=self.exportar).grid(row=7, column=1, sticky="w",
                                                                                             pady=8)
-        self.log = tk.Text(t, height=18, font=("Consolas", 9), relief="flat", bg="#fbfcfc")
+        h = ttk.LabelFrame(t, text="Civil 3D 2025", padding=8)
+        h.pack(fill="x", pady=(6, 0))
+        ttk.Label(h, text="1) Instale una vez el complemento: civil3d\\instalar_en_civil3d.bat   "
+                          "2) Exporte aquí con la opción Civil 3D   3) En Civil 3D escriba CSIMPORTAR y elija "
+                          "corredor_civil3d.json. Se crean puntos COGO y grupos, superficies, alineamientos, perfiles, "
+                          "líneas 3D, capas 3D, interferencias y BM.", wraplength=1300, justify="left").pack(anchor="w")
+        self.log = tk.Text(t, height=14, font=("Consolas", 9), relief="flat", bg="#fbfcfc")
         self.log.pack(fill="both", expand=True, pady=(6, 0))
 
     def _elegir_salida(self):

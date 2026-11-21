@@ -6,3 +6,5 @@ dist/
 salida/
 datos_ejemplo/salida/
 .pytest_cache/
+civil3d/CorredorSimpleC3D/bin/
+civil3d/CorredorSimpleC3D/obj/

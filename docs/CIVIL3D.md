@@ -1,74 +1,71 @@
-# Cómo llevar los resultados a Civil 3D 2025 y compararlos
+# Corredor Simple en Civil 3D 2025
 
-En la app, pestaña **6. Exportar**, pulsa **EXPORTAR TODO**. La carpeta de salida queda así:
+## 1. Instalar el complemento (una sola vez)
 
-```
-salida/
-  corredor_civil3d.xml    LandXML: alineamientos, perfiles de rasante y superficies
-  corredor_civil3d.dxf    DXF (AutoCAD 2018): modelo 3D, líneas características, puntos, hojas
-  informe.xlsx / informe.pdf
-  csv/
-    civil3d_puntos_PNEZD.csv      todos los puntos de diseño (terminado + capas)
-    civil3d_terreno_PNEZD.csv     puntos del levantamiento
-    EJE-xx_eje_progresiva_coordenada.csv
-    EJE-xx_estacion_total_terminado.csv / _capas.csv
-    EJE-xx_tabla_campo_capas.csv  (con lectura de mira)
-    EJE-xx_movimiento_tierras.csv
-    avisos.txt
-```
+1. Copia la carpeta `civil3d` del proyecto a tu computadora.
+2. Doble clic en **`civil3d\instalar_en_civil3d.bat`**. Esto copia `CorredorSimple.bundle` a
+   `%APPDATA%\Autodesk\ApplicationPlugins` y Civil 3D lo carga solo al iniciar.
+3. Abre Civil 3D 2025 y escribe **`CSAYUDA`**. Debe responder con la lista de comandos.
 
-## A. Importar en Civil 3D
+Si no carga, prueba de forma manual: comando `NETLOAD` y elige
+`CorredorSimple.bundle\Contents\CorredorSimpleC3D.dll`. Si Windows bloquea el archivo por venir de
+internet: clic derecho en el .dll → *Propiedades* → *Desbloquear*.
 
-Usa un dibujo nuevo con la plantilla métrica *_Autodesk Civil 3D (Metric) NCS.dwt*. En
-*Configuración del dibujo* pon las unidades en metros y elige el sistema de coordenadas de tu
-obra (por ejemplo UTM WGS84 19S).
+## 2. Exportar desde la app
 
-1. **LandXML**: cinta *Insertar → LandXML* y elige `corredor_civil3d.xml`.
-   - Aparecen las superficies `TN Terreno existente`, `EJE-xx TERMINADO`, `EJE-xx SUBRASANTE` y
-     `EJE-xx FONDO Cn ...`.
-   - Aparecen los alineamientos `EJE-xx ...` y sus perfiles de rasante: haz *Crear vista de perfil*
-     sobre cada alineamiento.
-   - Si te pide sitio, elige "Ninguno" o uno nuevo.
-2. **DXF**: cinta *Insertar → Adjuntar* (o abrir el DXF y copiarlo con *Copiar con punto base 0,0,0*).
-   Capas del DXF:
-   - `C3D-EJE-2D`: polilínea del eje. Sirve si prefieres *Crear alineamiento desde objetos*.
-   - `C3D-LF-*`: polilíneas 3D de bordes, cuneta, sardinel, vereda y subrasante. Sirven como líneas
-     de rotura o se pueden convertir en *líneas características*.
-   - `C3D-3D-*`: caras 3D del corredor y de cada capa. Revísalas con *Órbita 3D* y estilo visual
-     *Realista*.
-   - `C3D-PUNTOS*`, `C3D-PUERTAS`, `C3D-FACHADA`, `C3D-BM`, `C3D-TN-PUNTOS`.
-   - `C3D-HOJA-*` y `C3D-PERFIL-*`: secciones (1:1) y perfiles (V × 10) ya dibujados, a la derecha de
-     la obra, como base de planos.
-3. **Puntos**: *Insertar → Puntos desde archivo*, formato **PNEZD (delimitado por comas)**, archivo
-   `csv/civil3d_puntos_PNEZD.csv`. Para el terreno, `civil3d_terreno_PNEZD.csv`.
+Pestaña **8 · Exportar**, con la opción **Civil 3D 2025: paquete para el complemento** marcada.
+Se genera `corredor_civil3d.json` en la carpeta de salida.
 
-## B. Qué comparar (contra tu diseño en Civil 3D o contra el mismo LandXML)
+## 3. Importar en Civil 3D
 
-| # | Qué | Dónde en Civil 3D | Dónde en la app | Diferencia aceptable |
+Abre un dibujo con la plantilla métrica *_Autodesk Civil 3D (Metric) NCS.dwt* y el sistema de
+coordenadas de tu obra. Escribe **`CSIMPORTAR`**, elige el `.json` y responde:
+
+- **Todo** (por defecto)
+- **Basico**: sin líneas 3D ni modelo de capas
+- **Replanteo**: además, los puntos de replanteo como puntos COGO
+
+| Se crea | Nombre en Civil 3D |
+|---|---|
+| Puntos COGO del levantamiento, con su código como descripción | Grupos de puntos `CS Terreno`, `CS Fachadas y limites`, `CS Puertas y cocheras`, `CS Elementos (buzones, postes...)`, `CS BM` |
+| Superficie del terreno | `CS TN Terreno existente` |
+| Superficies de diseño por calle | `CS EJE-xx TERMINADO`, `CS EJE-xx SUBRASANTE`, `CS EJE-xx FONDO C1…C4` |
+| Alineamientos (con la progresiva inicial) | `EJE-xx Nombre de la calle` |
+| Perfil de rasante (PVI de la app) y perfil del terreno | `EJE-xx Rasante`, `EJE-xx Terreno` |
+| Vistas de perfil | a la derecha de la obra |
+| Líneas características 3D (bordes, cuneta, sardinel, vereda, subrasante) | capas `CS-LF-*` |
+| Fachadas, muros y límites | capas `CS-FACHADA-CA/MU/LP` |
+| Modelo 3D de calzada, cuneta, sardinel, vereda y cada capa | capas `CS-3D-*` |
+| Interferencias con su estado y qué hacer | capas `CS-INTERF-ERROR/AVISO/INFO` |
+| BM con cota y ubicación | capa `CS-BM` |
+
+`CSRESUMEN` muestra en la línea de comandos los volúmenes, las interferencias y los BM del archivo.
+
+Desde ahí puedes seguir trabajando como siempre: etiquetas, líneas de muestreo, tablas de volúmenes,
+vistas de sección y planos.
+
+## 4. Qué comparar (app frente a Civil 3D)
+
+| # | Qué | En Civil 3D | En la app | Diferencia aceptable |
 |---|---|---|---|---|
-| 1 | Coordenadas del eje cada 10 m | *Alineamiento → Propiedades / Informes → Estacas* | `EJE-xx_eje_progresiva_coordenada.csv` | ± 0.002 m |
-| 2 | Cota de rasante en 0+000, 0+120 (quiebre) y 0+250 | Etiquetas de la vista de perfil | Excel, hoja *Eje* | ± 0.001 m |
-| 3 | Cotas de BC, FC, CS, BV y PF en 0+050 y 0+200 (EJE-01) y en 0+180 (EJE-02) | Sección, o *Superficie terminada → etiqueta de cota de punto* | Excel, hoja *Secciones* | ± 0.002 m |
-| 4 | Fondo de cada capa en el eje | Superficies `FONDO Cn` | Excel, hoja *Capas* | ± 0.002 m |
-| 5 | Área de corte y relleno en 0+050, 0+120 (EJE-01) y 0+180 (EJE-02) | *Calcular materiales* (TN vs. SUBRASANTE) con líneas de muestreo cada 10 m | Excel, hoja *Tierras* | ± 1 % |
-| 6 | Volumen total por calle | *Volumes Dashboard*: superficie de volumen TN vs. `EJE-xx SUBRASANTE` | Pestaña 5 o *Resumen* | ± 2 % |
-| 7 | Volumen de losa | Superficies TERMINADO vs. `FONDO C1` | Resumen, columna losa | ± 1 % |
+| 1 | Coordenadas del eje cada 10 m | Informe de estacas del alineamiento | pestaña 7 / CSV del eje | ± 0.002 m |
+| 2 | Cota de rasante en los PVI | Vista de perfil | pestaña 2 | ± 0.001 m |
+| 3 | Cotas de los puntos de la sección | Etiqueta de cota sobre `CS EJE-xx TERMINADO` | pestaña 4 (ficha) | ± 0.002 m |
+| 4 | Volumen de corte | *Volumes Dashboard*: `CS TN` frente a `CS EJE-xx SUBRASANTE` | pestaña 6 | ± 2 % |
+| 5 | Volumen de losa | `TERMINADO` frente a `FONDO C1` | pestaña 6 (partidas) | ± 1 % |
 
-Valores de referencia del ejemplo (la app calcula por área media; el método entre superficies da
-casi lo mismo, ver `docs/VERIFICACION.md`):
+La app calcula por **área media**. Civil 3D calcula entre superficies. En el ejemplo la diferencia
+es de 0.1 a 0.8 % (ver `docs/VERIFICACION.md`).
 
-| Calle | Corte (m³) | Relleno (m³) | Losa (m³) |
-|---|---|---|---|
-| EJE-01 | 2306.15 | 0.00 | 288.00 |
-| EJE-02 | 1467.37 | 59.53 | 220.84 |
+## 5. Sin complemento (alternativa)
 
-**Por qué puede haber diferencias:**
-- Civil 3D triangula el terreno a su manera. Si lo creas desde los puntos, revisa que no se
-  formen triángulos largos a través de las manzanas; la app descarta los de más de 25 m.
-- El volumen de Civil 3D entre superficies es continuo. El área media depende del intervalo
-  entre secciones (10 m).
-- En el cruce, la app no mete la calle secundaria dentro de la calzada principal, y las
-  esquinas todavía no están resueltas.
+También puedes exportar **LandXML**: en Civil 3D, *Insertar → LandXML* importa alineamientos, perfiles
+y superficies. El **DXF** trae el 3D y las hojas de secciones y perfil.
 
-Cuando tengas los números de Civil 3D, pásamelos en una tabla con progresiva, punto, cota de
-Civil 3D y cota de la app, y revisamos las diferencias.
+## 6. Recompilar el complemento
+
+Necesitas el .NET 8 SDK. Haz doble clic en `civil3d\compilar_complemento.bat`. Las referencias
+oficiales de Autodesk (AutoCAD.NET 25 y Civil3D.NET 13.7) se descargan de NuGet.
+
+**Estado:** el complemento compila sin errores contra la API de Civil 3D 2025 y lee el paquete de
+ejemplo. Falta probarlo dentro de Civil 3D, lo que se hará en tu computadora.

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paquete de autocarga para Civil 3D 2025 (AutoCAD R25.0).
+     Copiar la carpeta CorredorSimple.bundle a %APPDATA%\Autodesk\ApplicationPlugins -->
+<ApplicationPackage SchemaVersion="1.0" AutodeskProduct="AutoCAD" ProductType="Application"
+                    Name="Corredor Simple" AppVersion="0.2.0"
+                    Description="Importa el diseño de pistas y veredas de Corredor Simple: puntos, superficies, ejes, perfiles, capas 3D, interferencias y BM."
+                    Author="Corredor Simple"
+                    ProductCode="{6E0B5C1A-3F7D-4C8E-9A51-0C2D7B3E4F10}"
+                    UpgradeCode="{9B4A2D7E-1C35-4F6A-8E0B-5D3C2A1F7E21}">
+  <CompanyDetails Name="Corredor Simple" />
+  <RuntimeRequirements OS="Win64" Platform="Civil3D" SeriesMin="R25.0" SeriesMax="R25.0" />
+  <Components Description="Complemento .NET">
+    <RuntimeRequirements OS="Win64" Platform="Civil3D" SeriesMin="R25.0" SeriesMax="R25.0" />
+    <ComponentEntry AppName="CorredorSimpleC3D" ModuleName="./Contents/CorredorSimpleC3D.dll"
+                    AppDescription="Comandos CSIMPORTAR, CSRESUMEN, CSAYUDA" LoadOnAutoCADStartup="True">
+      <Commands GroupName="CORREDORSIMPLE">
+        <Command Global="CSIMPORTAR" Local="CSIMPORTAR" />
+        <Command Global="CSRESUMEN" Local="CSRESUMEN" />
+        <Command Global="CSAYUDA" Local="CSAYUDA" />
+      </Commands>
+    </ComponentEntry>
+  </Components>
+</ApplicationPackage>

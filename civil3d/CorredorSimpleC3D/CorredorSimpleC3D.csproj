@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Complemento de Corredor Simple para Civil 3D 2025 (.NET 8). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>CorredorSimpleC3D</AssemblyName>
+    <RootNamespace>CorredorSimpleC3D</RootNamespace>
+    <Version>0.2.0</Version>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Referencias oficiales de Autodesk (solo para compilar; en Civil 3D se usan las instaladas) -->
+    <PackageReference Include="AutoCAD.NET" Version="25.0.1" ExcludeAssets="runtime" />
+    <PackageReference Include="Civil3D.NET" Version="13.7.1175" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

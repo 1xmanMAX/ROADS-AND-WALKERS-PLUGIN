@@ -36,10 +36,22 @@ codificado**, el **eje**, el **perfil** y la **sección típica**, arma el corre
 | **5 · Interferencias** | Tabla de puertas, cocheras y elementos con su estado y qué hacer. Doble clic abre la sección. |
 | **6 · Movimiento de tierras** | Tabla por calle o resumen, gráfico de áreas y curva de masa, y partidas para el metrado. |
 | **7 · Puntos y BM** | Los BM con su ubicación y los puntos de replanteo filtrados por calle, superficie y código. Se exportan o copian a Excel. |
-| **8 · Exportar** | Excel, PDF y CSV. LandXML y DXF para Civil 3D quedan para la siguiente etapa. |
+| **8 · Exportar** | Excel, PDF, CSV y el **paquete para Civil 3D 2025**. |
 
-Cuentas verificadas a mano: **[docs/VERIFICACION.md](docs/VERIFICACION.md)** (23 pruebas automáticas:
+Cuentas verificadas a mano: **[docs/VERIFICACION.md](docs/VERIFICACION.md)** (24 pruebas automáticas:
 `python -m pytest`).
+
+## Civil 3D 2025
+
+El complemento **`civil3d/CorredorSimple.bundle`** se instala con `civil3d/instalar_en_civil3d.bat`. El
+comando **`CSIMPORTAR`** construye en el dibujo:
+
+- puntos COGO con grupos;
+- superficies de terreno, terminado, subrasante y fondo de cada capa;
+- alineamientos, perfiles de rasante y de terreno, y vistas de perfil;
+- líneas 3D, modelo 3D de capas, interferencias y BM.
+
+Guía completa: **[docs/CIVIL3D.md](docs/CIVIL3D.md)**.
 
 ## Supuestos de diseño (confírmalos)
 
@@ -70,8 +82,11 @@ corredor/
   motor.py             corredor, cruces, fachadas, interferencias, BM, volúmenes, balance
   replanteo.py         tablas de eje, puntos y capas con lectura de mira
   graficos.py          planta, sección, perfil con guitarra, tierras y 3D
-  exportar.py          Excel, PDF, CSV (y LandXML/DXF para Civil 3D)
+  exportar.py          Excel, PDF, CSV, paquete Civil 3D, LandXML, DXF
   app.py               interfaz
+civil3d/
+  CorredorSimpleC3D/   código C# del complemento (.NET 8, Civil 3D 2025)
+  CorredorSimple.bundle/  complemento compilado listo para instalar
 datos_ejemplo/         proyecto de prueba
 pruebas/               pruebas automáticas
 docs/                  códigos, verificación, guía Civil 3D, capturas

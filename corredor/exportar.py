@@ -621,7 +621,64 @@ def exportar_pdf(res, ruta):
     return ruta
 
 
-def exportar_todo(res, carpeta, ai=None, formatos=("csv", "landxml", "dxf", "excel", "pdf")):
+# ------------------------------------------------------------------ paquete para el complemento de Civil 3D
+def exportar_civil3d_json(res, ruta, ai=None):
+    """Todo lo que el complemento CorredorSimpleC3D construye dentro de Civil 3D 2025, en un JSON."""
+    import json
+
+    from .malla import lineas_caracteristicas, modelo, superficie
+    proy = res.proyecto
+    r4 = lambda v: round(float(v), 4)
+    cat = proy.catalogo
+    paq = {"formato": "CorredorSimpleC3D", "version": 1, "proyecto": proy.nombre,
+           "generado": dt.datetime.now().isoformat(timespec="seconds"), "calles": [], "puntos": [], "fachadas": [],
+           "elementos": [], "bms": [], "tn": None}
+    for q in proy.levantamiento or proy.terreno:
+        c = cat.interpretar(q.codigo)[0] if cat else None
+        paq["puntos"].append({"num": str(q.numero), "e": r4(q.este), "n": r4(q.norte), "z": r4(q.cota),
+                              "desc": q.codigo, "tipo": c.codigo if c else "?"})
+    if res.terreno.ok:
+        paq["tn"] = {"pts": [[r4(p.este), r4(p.norte), r4(p.cota)] for p in proy.terreno],
+                     "caras": [list(map(int, t)) for t in res.terreno.triangulos()]}
+    for k, rc in res.calles.items():
+        c = {"id": k, "nombre": rc.calle.nombre, "prog0": r4(rc.alin.prog_inicial), "longitud": r4(rc.alin.longitud),
+             "vertices": [[r4(e), r4(n)] for e, n in rc.alin.vertices],
+             "pvis": [[r4(a), r4(b)] for a, b in rc.perfil.pvis()],
+             "secciones": [{"prog": r4(s.prog), "e": r4(s.e), "n": r4(s.n), "rasante": r4(s.rasante),
+                            "corte": r4(s.area_corte), "relleno": r4(s.area_relleno)} for s in rc.secciones
+                           if not s.omitida],
+             "lineas": {}, "superficies": {}, "caras3d": {}, "replanteo": []}
+        for linea, pref in (("TERMINADO", ""), ("SUBRASANTE", "SUB-")):
+            for cod, polis in lineas_caracteristicas(rc, linea).items():
+                c["lineas"][pref + cod] = [[[r4(x) for x in p] for p in pl] for pl in polis]
+        sups = [("TERMINADO", "TERMINADO"), ("SUBRASANTE", "SUBRASANTE")]
+        sups += [(f"C{j}_FONDO", f"FONDO C{j} {nombre_seguro(cp.nombre)}") for j, cp in enumerate(proy.capas_de("calzada"), 1)]
+        for linea, nombre in sups:
+            pts, caras = superficie([rc], linea)
+            if caras:
+                c["superficies"][nombre] = {"pts": [[r4(x) for x in p] for p in pts], "caras": [list(f) for f in caras]}
+        for cat3, q in modelo(rc, proy):
+            c["caras3d"].setdefault(nombre_seguro(cat3), []).append([[r4(x) for x in p] for p in q])
+        for p in puntos_seccion(rc):
+            c["replanteo"].append({"nombre": p["nombre"], "e": r4(p["este"]), "n": r4(p["norte"]), "z": r4(p["cota"]),
+                                   "codigo": p["codigo"]})
+        c["balance"] = {kk: r4(v) for kk, v in rc.balance.items()}
+        paq["calles"].append(c)
+    for l in proy.fachadas:
+        zs = l.cotas or [None] * len(l.puntos)
+        paq["fachadas"].append({"id": l.linea_id, "tipo": l.tipo,
+                                "pts": [[r4(e), r4(n), r4(z) if z is not None else 0.0] for (e, n, _), z in zip(l.puntos, zs)]})
+    for x in res.interferencias:
+        paq["elementos"].append({k2: (r4(v) if isinstance(v, float) else v) for k2, v in x.items()})
+    ub = {b["bm"].id: b["texto"] for b in res.bm_ubicacion}
+    for b in proy.bms:
+        paq["bms"].append({"id": b.id, "punto": b.punto, "e": r4(b.este), "n": r4(b.norte), "z": r4(b.cota),
+                           "ubicacion": ub.get(b.id, ""), "descripcion": b.descripcion})
+    Path(ruta).write_text(json.dumps(paq, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    return ruta
+
+
+def exportar_todo(res, carpeta, ai=None, formatos=("csv", "landxml", "dxf", "civil3d", "excel", "pdf")):
     c = Path(carpeta)
     c.mkdir(parents=True, exist_ok=True)
     salida = []
@@ -631,6 +688,8 @@ def exportar_todo(res, carpeta, ai=None, formatos=("csv", "landxml", "dxf", "exc
         salida.append(exportar_landxml(res, c / "corredor_civil3d.xml"))
     if "dxf" in formatos:
         salida.append(exportar_dxf(res, c / "corredor_civil3d.dxf"))
+    if "civil3d" in formatos:
+        salida.append(exportar_civil3d_json(res, c / "corredor_civil3d.json", ai))
     if "excel" in formatos:
         salida.append(exportar_excel(res, c / "informe.xlsx", ai))
     if "pdf" in formatos:

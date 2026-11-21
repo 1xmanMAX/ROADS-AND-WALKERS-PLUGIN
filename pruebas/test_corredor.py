@@ -266,3 +266,21 @@ def test_exportaciones(res, tmp_path):
     assert lineas[0].split(",")[0] == "1"       # sin BOM ni cabecera
     n_, e_ = map(float, lineas[0].split(",")[1:3])
     assert n_ > 8_000_000 and 300_000 < e_ < 500_000   # orden N, E
+
+
+def test_paquete_civil3d(res, tmp_path):
+    """El JSON del complemento trae todo lo que CSIMPORTAR construye, con índices válidos."""
+    import json
+    from corredor.exportar import exportar_civil3d_json
+    d = json.loads(Path(exportar_civil3d_json(res, tmp_path / "c.json")).read_text(encoding="utf-8"))
+    assert d["formato"] == "CorredorSimpleC3D" and len(d["calles"]) == 2
+    assert len(d["puntos"]) == len(res.proyecto.levantamiento)
+    assert len(d["bms"]) == 3 and len(d["elementos"]) == len(res.interferencias)
+    for c in d["calles"]:
+        assert c["pvis"][0][0] == pytest.approx(0.0)
+        for nombre, m in c["superficies"].items():
+            n = len(m["pts"])
+            assert all(0 <= i < n for f in m["caras"] for i in f), nombre
+        assert all(len(q) == 4 for caras in c["caras3d"].values() for q in caras)
+    tn = d["tn"]
+    assert all(0 <= i < len(tn["pts"]) for f in tn["caras"] for i in f)
