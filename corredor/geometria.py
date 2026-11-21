@@ -58,7 +58,7 @@ class Alineamiento:
     def punto(self, prog, offset=0.0):
         s = self._seg(prog)
         d = prog - s["p0"]
-        nx, ny = s["uy"], -s["ux"]          # normal a la derecha
+        nx, ny = self.normal(prog) if offset else (0.0, 0.0)   # en un vértice, bisectriz
         return (s["e0"] + d * s["ux"] + offset * nx, s["n0"] + d * s["uy"] + offset * ny)
 
     def direccion(self, prog):
@@ -66,8 +66,35 @@ class Alineamiento:
         return s["ux"], s["uy"]
 
     def normal(self, prog):
+        """Normal a la derecha. En un vértice interior es la bisectriz en inglete: el vector se
+        alarga 1/cos(θ/2) para que el offset 'o' quede a 'o' metros de los DOS tramos (como el
+        OFFSET de AutoCAD). Con la normal del tramo de llegada, las secciones vecinas del lado
+        interior se cruzaban y la superficie TIN se doblaba sobre sí misma (verificado en Civil 3D)."""
+        k = self.vertice_en(prog)
+        if k is not None:
+            a, b = self.segs[k - 1], self.segs[k]
+            bx, by = a["uy"] + b["uy"], -a["ux"] - b["ux"]
+            lb = math.hypot(bx, by)
+            cos_m = (bx * a["uy"] - by * a["ux"]) / lb
+            if lb > 1e-9 and cos_m > 0.2:          # deflexiones de hasta ~157°
+                return bx / lb / cos_m, by / lb / cos_m
         ux, uy = self.direccion(prog)
         return uy, -ux
+
+    def vertice_en(self, prog, tol=1e-6):
+        """Índice del tramo que empieza en un vértice interior ubicado en 'prog', o None."""
+        for k in range(1, len(self.segs)):
+            if abs(self.segs[k]["p0"] - prog) <= tol:
+                return k
+        return None
+
+    def deflexiones(self):
+        """[(progresiva del vértice, deflexión en grados)] de los vértices interiores."""
+        out = []
+        for a, b in zip(self.segs[:-1], self.segs[1:]):
+            c = max(-1.0, min(1.0, a["ux"] * b["ux"] + a["uy"] * b["uy"]))
+            out.append((b["p0"], math.degrees(math.acos(c))))
+        return out
 
     def azimut(self, prog):
         ux, uy = self.direccion(prog)
@@ -117,12 +144,23 @@ class Perfil:
         """Progresivas donde cambia la pendiente (sin el inicio ni el final)."""
         return [t[0] for t in self.tramos[1:]]
 
-    def pvis(self):
-        """Puntos de intersección vertical (progresiva, cota) para Civil 3D."""
+    def pvis(self, p_ini=None, p_fin=None):
+        """Puntos de intersección vertical (progresiva, cota) para Civil 3D.
+
+        Si se dan p_ini / p_fin (inicio y fin del eje), el primer y el último PVI se llevan hasta
+        ahí prolongando la pendiente del tramo, igual que hace la app al calcular. Así el perfil de
+        Civil 3D cubre todo el alineamiento (si no, ElevationAt falla en los extremos; pasaba con
+        ejes de 250.00005 m frente a un perfil hasta 250.000).
+        """
         pv = [(self.tramos[0][0], self.tramos[0][1])]
         for t in self.tramos:
             pv.append((t[3], t[1] + t[2] / 100.0 * (t[3] - t[0])))
-        return pv
+        if p_ini is None or p_fin is None:
+            return pv
+        # el perfil se ajusta exactamente al eje: se prolonga o se recorta en los extremos y se
+        # quitan los quiebres que caen fuera del eje
+        dentro = [p for p in pv[1:-1] if p_ini + 1e-6 < p[0] < p_fin - 1e-6]
+        return [(p_ini, self.cota(p_ini))] + dentro + [(p_fin, self.cota(p_fin))]
 
     def validar(self, eje_id, pmax, pmin, alin=None):
         """Devuelve lista de (nivel, prog, mensaje)."""

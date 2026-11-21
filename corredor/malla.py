@@ -8,8 +8,9 @@ from .motor import _dentro
 
 CATEGORIA_PAR = {
     frozenset(("EJE", "BC")): "CALZADA",
-    frozenset(("BC", "FC")): "CUNETA", frozenset(("FC", "PS")): "CUNETA",
-    frozenset(("PS", "CS")): "SARDINEL", frozenset(("CS", "BV")): "SARDINEL",
+    frozenset(("BC", "FC")): "CUNETA",
+    frozenset(("FC", "CS")): "SARDINEL", frozenset(("BC", "CS")): "SARDINEL",   # cara del sardinel
+    frozenset(("CS", "BV")): "SARDINEL",
     frozenset(("BV", "PF")): "VEREDA",
 }
 
@@ -39,8 +40,8 @@ def _ajustar(lista, nudge):
     return out
 
 
-def quads(rc, linea, nudge=False):
-    """[(cod_a, cod_b, [(e,n,z) x4])] para la línea indicada."""
+def quads(rc, linea, nudge=False, con_secciones=False):
+    """[(cod_a, cod_b, [(e,n,z) x4])] para la línea indicada (+ s1, s2 si con_secciones)."""
     res = []
     for s1, s2 in pares(rc):
         l1 = _ajustar(s1.lineas.get(linea, []), nudge)
@@ -53,7 +54,7 @@ def quads(rc, linea, nudge=False):
                 a2, b2 = l2[idx2[ca]], l2[idx2[cb]]
                 q = [(*s1.xy(a1[1]), a1[2]), (*s1.xy(b1[1]), b1[2]),
                      (*s2.xy(b2[1]), b2[2]), (*s2.xy(a2[1]), a2[2])]
-                res.append((ca, cb, q))
+                res.append((ca, cb, q, s1, s2) if con_secciones else (ca, cb, q))
     return res
 
 
@@ -77,8 +78,15 @@ def bordes(rc, tope, fondo):
 def modelo(rc, proy):
     """Lista de (categoría, cuadrilátero) para ver en 3D o exportar a DXF."""
     out = []
-    for ca, cb, q in quads(rc, "TERMINADO"):
-        out.append((CATEGORIA_PAR.get(frozenset((_base(ca), _base(cb))), "CALZADA"), q))
+    for ca, cb, q, s1, s2 in quads(rc, "TERMINADO", con_secciones=True):
+        cat = CATEGORIA_PAR.get(frozenset((_base(ca), _base(cb))), "CALZADA")
+        if cat == "CALZADA" and s1.baden_id and s1.baden_id == s2.baden_id:
+            cat = "BADEN"
+        elif cat in ("VEREDA", "SARDINEL") and ca != "EJE":
+            lado = ca[-1]
+            if s1.rebaje.get(lado, 0) > 0 or s2.rebaje.get(lado, 0) > 0:
+                cat = "RAMPA"
+        out.append((cat, q))
     for k, cp in enumerate(proy.capas_de("calzada"), start=1):
         cat = f"CAPA C{k} {cp.nombre}"
         out += [(cat, q) for _, _, q in quads(rc, f"C{k}_FONDO")]

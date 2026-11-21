@@ -133,7 +133,7 @@ def exportar_landxml(res, ruta):
         a('      </CoordGeom>')
         a(f'      <Profile name="{nom}">')
         a(f'        <ProfAlign name="{escape(nombre_seguro(k))} Rasante">')
-        for sta, z in rc.perfil.pvis():
+        for sta, z in rc.perfil.pvis(al.prog_inicial, al.prog_final):
             a(f'          <PVI>{sta:.4f} {z:.4f}</PVI>')
         a('        </ProfAlign>')
         a('      </Profile>')
@@ -159,7 +159,7 @@ def exportar_landxml(res, ruta):
 
     t = res.terreno
     if t.ok:
-        pts = [(p.este, p.norte, p.cota) for p in proy.terreno]
+        pts = [(p.este, p.norte, p.cota) for p in t.puntos]      # sin repetidos: índices del TIN
         surf("TN Terreno existente", pts, t.triangulos(), "Levantamiento topografico")
     calles = list(res.calles.values())
     for rc in calles:
@@ -168,6 +168,10 @@ def exportar_landxml(res, ruta):
         surf(f"{k} SUBRASANTE", *superficie([rc], "SUBRASANTE"), "Fondo de excavacion")
         for j, cp in enumerate(proy.capas_de("calzada"), start=1):
             surf(f"{k} FONDO C{j} {cp.nombre}", *superficie([rc], f"C{j}_FONDO"), f"Fondo de {cp.nombre}")
+    if res.esquinas:
+        from .esquinas import superficie as sup_esquinas
+        surf("ESQUINAS TERMINADO", *sup_esquinas(res, "TERMINADO"), "Esquinas curvas: pavimento, sardinel y martillos")
+        surf("ESQUINAS SUBRASANTE", *sup_esquinas(res, "SUBRASANTE"), "Esquinas curvas: fondo de excavacion")
     a('  </Surfaces>')
     a('</LandXML>')
     Path(ruta).write_text("\n".join(L) + "\n", encoding="utf-8")
@@ -175,7 +179,8 @@ def exportar_landxml(res, ruta):
 
 
 # ------------------------------------------------------------------ DXF
-COLOR_DXF = {"CALZADA": 8, "CUNETA": 5, "SARDINEL": 9, "VEREDA": 41, "FACHADA": 1}
+COLOR_DXF = {"CALZADA": 8, "CUNETA": 5, "SARDINEL": 9, "VEREDA": 41, "FACHADA": 1, "BADEN": 200, "RAMPA": 30,
+             "ESQUINA CALZADA": 8, "ESQUINA SARDINEL": 9, "MARTILLO": 14}
 
 
 def exportar_dxf(res, ruta, hoja_secciones=True):
@@ -237,6 +242,17 @@ def exportar_dxf(res, ruta, hoja_secciones=True):
         for p in puntos_seccion(rc):
             msp.add_point((p["este"], p["norte"], p["cota"]), dxfattribs={"layer": lay_pt})
             texto(p["nombre"], (p["este"] + 0.05, p["norte"] + 0.05, p["cota"]), 0.08, lay_tx)
+    # esquinas curvas: caras 3D y sardinel curvo en planta
+    from .esquinas import modelo as modelo_esquinas
+    for cat, q in modelo_esquinas(res):
+        lay = capa("C3D-3D-" + cat.replace(" ", "-"), COLOR_DXF.get(cat, 7))
+        msp.add_3dface(q if len(q) == 4 else list(q) + [q[-1]], dxfattribs={"layer": lay})
+    for e in res.esquinas:
+        if e.get("ok"):
+            for arco, nom in ((e["arco_cara"], "C3D-ESQUINA-SARDINEL"), (e["arco_dorso"], "C3D-ESQUINA-SARDINEL")):
+                msp.add_polyline3d(arco, dxfattribs={"layer": capa(nom, 9)})
+            texto(f"{e['id']} R={e['R']:.2f}", e["arco_cara"][len(e["arco_cara"]) // 2][:2], 0.25,
+                  capa("C3D-ESQUINA-TEXTO", 9))
     # fachadas y puertas
     for l in proy.fachadas:
         msp.add_lwpolyline([(e, n) for e, n, _ in l.puntos], dxfattribs={"layer": capa("C3D-FACHADA", 1)})
@@ -248,6 +264,21 @@ def exportar_dxf(res, ruta, hoja_secciones=True):
         msp.add_circle((uu.este, uu.norte), uu.ancho / 2, dxfattribs={"layer": lay})
         texto(f"{uu.id} umbral {uu.cota:.3f} vereda {u['cota_vereda']:.3f} dif {u['diferencia']:+.3f}",
               (uu.este + 0.3, uu.norte + 0.3), 0.18, lay)
+    # puntos y líneas de los códigos de campo
+    from .codigos import CODIGOS, lineas, puntos_codificados
+    pcs = puntos_codificados(proy, getattr(proy, "codigos_alias", {}))
+    for lin in lineas(pcs):
+        msp.add_polyline3d([(p.este, p.norte, p.cota) for p in lin["puntos"]] +
+                           ([(lin["puntos"][0].este, lin["puntos"][0].norte, lin["puntos"][0].cota)] if lin["cerrada"] else []),
+                           dxfattribs={"layer": capa("C3D-COD-" + lin["codigo"], 6)})
+    for p in pcs:
+        if p.codigo and CODIGOS[p.codigo][2] == "punto" and p.codigo not in ("TN",):
+            lay = capa("C3D-COD-" + p.codigo, 6)
+            if p.codigo in ("POS", "ARB") and p.parametros:
+                msp.add_circle((p.este, p.norte, p.cota), p.parametros[0] / 2, dxfattribs={"layer": lay})
+            else:
+                msp.add_point((p.este, p.norte, p.cota), dxfattribs={"layer": lay})
+            texto(f"{p.codigo} {p.numero}", (p.este + 0.2, p.norte + 0.2), 0.15, lay)
     # terreno
     lay_tn = capa("C3D-TN-PUNTOS", 32)
     for p in proy.terreno:
@@ -399,10 +430,33 @@ def exportar_excel(res, ruta, ai=None):
               [f"{n} (m3)" for n in capas_n], filas, {2: 18}, primera=True)
     for c in ws[ws.max_row]:
         c.font = Font(bold=True)
+    if res.esquinas:
+        filas_e = []
+        for e in res.esquinas:
+            filas_e.append([e["id"], e["cruce"], f"{e['principal']} {'IZQ' if e['lado_p'] == 'I' else 'DER'} / "
+                            f"{e['secundaria']} {'IZQ' if e['lado_s'] == 'I' else 'DER'}", e["R"],
+                            fmt_prog(e["tp"]), fmt_prog(e["ts"]), e.get("area_calzada", 0), e.get("area_baden", 0),
+                            e.get("area_martillo", 0), e.get("long_sardinel", 0), 2,
+                            e.get("vol_corte", 0), e.get("vol_relleno", 0), e.get("error", "")])
+        tot = lambda c: sum(e.get(c, 0) for e in res.esquinas)
+        filas_e.append(["TOTAL", "", "", "", "", "", tot("area_calzada"), tot("area_baden"), tot("area_martillo"),
+                        tot("long_sardinel"), 2 * len(res.esquinas), tot("vol_corte"), tot("vol_relleno"), ""])
+        ws_e = hoja("Esquinas", ["Esquina", "Cruce", "Lados", "Radio (m)", "Tangencia principal",
+                                 "Tangencia secundaria", "Pavimento (m2)", "de ello badén (m2)", "Martillo (m2)",
+                                 "Sardinel curvo (m)", "Rampas (und)", "Corte (m3)", "Relleno (m3)", "Nota"],
+                    filas_e, {2: 18, 3: 26})
+        for c in ws_e[ws_e.max_row]:
+            c.font = Font(bold=True)
+    if res.puntos_codificados:
+        hoja("Puntos codificados", ["Punto", "Código", "Qué es", "Eje", "Progresiva", "Offset", "Cota campo",
+                                    "Cota diseño", "Diferencia", "Resultado"],
+             [[f["punto"], f["codigo"], f["descripcion"], f["eje"], f["progresiva"], f["offset"], f["cota"],
+               f.get("cota_diseno", ""), f.get("diferencia", ""), f["resultado"]] for f in res.puntos_codificados],
+             {3: 30, 10: 70})
     hoja("Avisos", ["Nivel", "Categoría", "Eje", "Progresiva", "Mensaje"],
          [[a.nivel, a.categoria, a.eje_id, fmt_prog(a.prog) if a.prog is not None else "", a.mensaje] for a in res.avisos],
          {5: 120})
-    codigos = ["PFI", "BVI", "CSI", "PSI", "FCI", "BCI", "EJE", "BCD", "FCD", "PSD", "CSD", "BVD", "PFD"]
+    codigos = ["PFI", "BVI", "CSI", "FCI", "BCI", "EJE", "BCD", "FCD", "CSD", "BVD", "PFD"]
     for k, rc in res.calles.items():
         hoja(f"Eje {k}", ["Progresiva", "Este", "Norte", "Cota rasante", "Pendiente %", "Tipo", "Nombre"],
              [[r["progresiva"], r["este"], r["norte"], r["cota"], r["pendiente"], r["tipo"], r["nombre"]]

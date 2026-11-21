@@ -129,8 +129,10 @@ def test_cruce(res):
 def test_volumen_losa(res):
     # losa: 7.20 m × 0.16 m = 1.152 m² por metro
     assert res.calles["EJE-01"].materiales["Losa de concreto f'c=210"] == pytest.approx(250.0 * 1.152, rel=1e-4)
-    # EJE-02 sin los 8.30 m dentro de la calzada del EJE-01 (3.60 + 0.40 + 0.15 a cada lado)
-    assert res.calles["EJE-02"].materiales["Losa de concreto f'c=210"] == pytest.approx(191.70 * 1.152, rel=1e-4)
+    # EJE-02 sin los 7.20 m dentro de la calzada del EJE-01 (la boca, donde EJE-01 no tiene cuneta ni
+    # sardinel, la pavimenta EJE-02) y sin la losa que reemplazan los 2 badenes (0.80 × 7.20 × 0.16)
+    assert res.calles["EJE-02"].materiales["Losa de concreto f'c=210"] == pytest.approx(
+        192.80 * 1.152 - 2 * 0.80 * 7.20 * 0.16, rel=1e-4)
 
 
 def test_area_con_terreno_plano(res):
@@ -203,7 +205,7 @@ def test_exportaciones(res, tmp_path):
     ns = {"l": "http://www.landxml.org/schema/LandXML-1.2"}
     assert len(raiz.findall(".//l:Alignment", ns)) == 2
     sup = raiz.findall(".//l:Surface", ns)
-    assert len(sup) == 1 + 2 * 6
+    assert len(sup) == 1 + 2 * 6 + 2          # TN, 6 por calle y las 2 de las esquinas curvas
     for s in sup:   # cada cara usa ids existentes
         n = len(s.findall(".//l:P", ns))
         for f in s.findall(".//l:F", ns):

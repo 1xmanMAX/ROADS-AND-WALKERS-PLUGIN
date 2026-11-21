@@ -23,9 +23,18 @@ def _abrir(ruta):
             continue
     primera = texto.splitlines()[0] if texto else ""
     sep = ";" if primera.count(";") > primera.count(",") else ","
-    filas = list(csv.DictReader(texto.splitlines(), delimiter=sep))
+    lector = csv.DictReader(texto.splitlines(), delimiter=sep)
+    filas = list(lector)
+    ultima = lector.fieldnames[-1] if lector.fieldnames else None
     limpias = []
     for f in filas:
+        # columnas de más (Excel deja ';' sueltos al final, o una descripción trae el separador):
+        # se pegan a la última columna en vez de romper la lectura
+        extra = f.pop(None, None)
+        if extra:
+            resto = sep.join(x for x in extra if x is not None).strip(sep + " ")
+            if resto and ultima is not None:
+                f[ultima] = sep.join(x for x in (f.get(ultima) or "", resto) if x)
         f = {(k or "").strip().lower(): (v or "").strip() for k, v in f.items()}
         if any(f.values()):
             limpias.append(f)
@@ -211,6 +220,8 @@ def leer_proyecto(carpeta):
         proy.umbrales = leer_umbrales(c / "umbrales.csv")
     if (c / "terreno.csv").exists():
         proy.terreno = leer_terreno(c / "terreno.csv")
+    from .codigos import leer_alias
+    proy.codigos_alias = leer_alias(c)
     if (c / "bm.csv").exists():
         proy.bms = leer_bms(c / "bm.csv")
     return proy

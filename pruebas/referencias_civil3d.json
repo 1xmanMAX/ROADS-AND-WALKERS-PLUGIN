@@ -1,0 +1,118 @@
+{
+ "E01_ladera": {
+  "EJE-01": {
+   "corte": 1714.64,
+   "relleno": 27.61
+  }
+ },
+ "E02_eje_quebrado": {
+  "EJE-01": {
+   "corte": 2924.99,
+   "relleno": 0
+  }
+ },
+ "E03_cruce_oblicuo_T": {
+  "EJE-01": {
+   "corte": 4616.73,
+   "relleno": 0
+  },
+  "EJE-02": {
+   "corte": 1785.26,
+   "relleno": 0
+  },
+  "EJE-03": {
+   "corte": 888.93,
+   "relleno": 0
+  },
+  "EJE-04": {
+   "corte": 765.96,
+   "relleno": 0
+  },
+  "ESQUINAS": {
+   "corte": 104.72,
+   "relleno": 0
+  }
+ },
+ "E04_llano_relleno": {
+  "EJE-01": {
+   "corte": 0,
+   "relleno": 2454.92
+  }
+ },
+ "E05_irregular": {
+  "EJE-01": {
+   "corte": 2132.26,
+   "relleno": 0
+  }
+ },
+ "E06_malla_3x3": {
+  "EJE-01": {
+   "corte": 2404.44,
+   "relleno": 0
+  },
+  "EJE-02": {
+   "corte": 2393.58,
+   "relleno": 0
+  },
+  "EJE-03": {
+   "corte": 2276.75,
+   "relleno": 0
+  },
+  "EJE-04": {
+   "corte": 1999.83,
+   "relleno": 0
+  },
+  "EJE-05": {
+   "corte": 1928.69,
+   "relleno": 0
+  },
+  "EJE-06": {
+   "corte": 1937.57,
+   "relleno": 0
+  },
+  "ESQUINAS": {
+   "corte": 314.4,
+   "relleno": 0
+  }
+ },
+ "E07_pasaje_angosto": {
+  "EJE-01": {
+   "corte": 299.7,
+   "relleno": 0
+  }
+ },
+ "E08_curva_cerrada": {
+  "EJE-01": {
+   "corte": 2432.86,
+   "relleno": 48.84
+  }
+ },
+ "datos_ejemplo": {
+  "EJE-01": {
+   "corte": 2298.66,
+   "relleno": 0
+  },
+  "EJE-02": {
+   "corte": 1463.47,
+   "relleno": 51.17
+  },
+  "ESQUINAS": {
+   "corte": 24.06,
+   "relleno": 0
+  }
+ },
+ "E09_codificado": {
+  "EJE-01": {
+   "corte": 2317.67,
+   "relleno": 0
+  },
+  "EJE-02": {
+   "corte": 1234.19,
+   "relleno": 0
+  },
+  "ESQUINAS": {
+   "corte": 31.63,
+   "relleno": 0
+  }
+ }
+}

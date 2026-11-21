@@ -1,0 +1,7 @@
+ambito,orden_desde_arriba,nombre,espesor_cm
+calzada,1,Losa de concreto fc210,16
+calzada,2,Base granular,15
+calzada,3,Subbase granular,15
+calzada,4,Mejoramiento / pedraplen,30
+vereda,1,Concreto vereda fc175,10
+vereda,2,Base granular vereda,10

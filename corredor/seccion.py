@@ -2,18 +2,21 @@ r"""Sección transversal típica aplicada en una progresiva.
 
 Puntos de la sección (de izquierda a derecha; sufijo I = izquierda, D = derecha):
 
-  PFI  BVI  CSI        BCI           EJE           BCD        CSD  BVD  PFD
-   |vereda|sard|        \___ calzada (bombeo) ___/        |sard|vereda|
-              PSI\_FCI_/                                   \_FCD_/PSD
-                  cuneta                                    cuneta
+  PFI  BVI  CSI          BCI          EJE          BCD          CSD  BVD  PFD
+   |vereda|sard|          \__ calzada (bombeo) __/          |sard|vereda|
+              |FCI ____/ cuneta                  cuneta \____ FCD|
+              (fondo junto al sardinel)        (fondo junto al sardinel)
 
   EJE  eje (cota de rasante)
   BC   borde de calzada          = rasante − bombeo × semiancho
-  FC   fondo de cuneta (V)       = BC − profundidad, a la mitad del ancho de cuneta
-  PS   pie de sardinel           = misma cota que BC, al final de la cuneta
-  CS   cabeza de sardinel        = BC + altura de sardinel (cara vertical)
+  FC   fondo de cuneta           = BC − profundidad, PEGADO A LA CARA DEL SARDINEL
+  CS   cabeza de sardinel        = BC + altura de sardinel (cara vertical sobre FC)
   BV   borde interior de vereda  = CS, tras el ancho del sardinel
   PF   pie de fachada (borde exterior de vereda) = BV + pendiente vereda × ancho vereda
+
+Cuneta: triángulo rectángulo con el sardinel como cateto vertical (RNE CE.040 Drenaje Pluvial,
+art. 14; cuneta Tipo I del expediente de Nuñoa: 0.40 m de ancho y 0.10 m de profundidad). El agua
+corre junto al sardinel; la cuneta cae desde el borde de la losa hasta la cara del sardinel.
 
 Capas de calzada: paralelas a la rasante (siguen el bombeo). La 1.ª capa
 (losa/carpeta) ocupa solo la calzada; las capas granulares de debajo se
@@ -24,7 +27,7 @@ vereda, fondo de la última capa de vereda.
 import math
 from dataclasses import dataclass, field
 
-ORDEN_LADO = ["PF", "BV", "CS", "PS", "FC", "BC"]   # de afuera hacia el eje
+ORDEN_LADO = ["PF", "BV", "CS", "FC", "BC"]   # de afuera hacia el eje
 
 
 @dataclass
@@ -47,8 +50,13 @@ class Seccion:
     poligonos: dict = field(default_factory=dict)      # capa -> [[(o, z), ...], ...]
     area_corte: float = 0.0
     area_relleno: float = 0.0
+    mom_corte: float = 0.0       # momento del área respecto al eje (∫ h·o do), para la excentricidad
+    mom_relleno: float = 0.0
     terreno_faltante: float = 0.0
     perfil_terreno: list = field(default_factory=list)  # [(o, z_terreno)]
+    baden: float = 0.0           # cuánto baja la superficie por un badén (m)
+    baden_id: str = ""           # badén al que pertenece la sección (también en sus bordes)
+    rebaje: dict = field(default_factory=dict)   # rampa: cuánto baja la vereda por lado (m)
 
     def xy(self, offset):
         return self.e + offset * self.nx, self.n + offset * self.ny
@@ -66,6 +74,9 @@ class Seccion:
     def area(self, capa):
         return sum(area_poligono(p) for p in self.poligonos.get(capa, []))
 
+    def momento(self, capa):
+        return sum(momento_poligono(p) for p in self.poligonos.get(capa, []))
+
 
 def area_poligono(pts):
     a = 0.0
@@ -74,13 +85,23 @@ def area_poligono(pts):
     return abs(a) / 2.0
 
 
+def momento_poligono(pts):
+    """∫ o dA del polígono (área × offset del centroide), sin importar el sentido de giro."""
+    a = m = 0.0
+    for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
+        cr = x1 * y2 - x2 * y1
+        a += cr
+        m += (x1 + x2) * cr
+    return m / 6.0 if a >= 0 else -m / 6.0
+
+
 def _espejo(lista_derecha):
     """Convierte la lista del lado derecho (del eje hacia afuera) en la del lado izquierdo, afuera->eje."""
     return [(c[:-1] + "I" if c.endswith("D") else c, -o, z) for c, o, z in reversed(lista_derecha)]
 
 
 def construir(calle, alin, perfil, prog, par, capas_calz, capas_ver,
-              lateral, ancho_vereda, cuneta, tipo="INTERVALO"):
+              lateral, ancho_vereda, cuneta, tipo="INTERVALO", rebaje=None):
     """Construye la sección completa.
 
     par: parámetros del proyecto (dict con valores en cm/% tal como en la interfaz).
@@ -115,9 +136,10 @@ def construir(calle, alin, perfil, prog, par, capas_calz, capas_ver,
             o_ps = b + c
             o_bv = o_ps + ws
             o_pf = o_bv + w
-            zCS = zBC + hs
-            pts += [("FCD", b + c / 2.0, zBC - hc), ("PSD", o_ps, zBC), ("CSD", o_ps, zCS),
-                    ("BVD", o_bv, zCS), ("PFD", o_pf, zCS + pv * w)]
+            zCS = zBC + hs - (rebaje or {}).get(lado, 0.0)      # rampa: la vereda baja
+            if c > 1e-6:
+                pts += [("FCD", o_ps, zBC - hc)]          # fondo pegado al sardinel (CE.040)
+            pts += [("CSD", o_ps, zCS), ("BVD", o_bv, zCS), ("PFD", o_pf, zCS + pv * w)]
             info.update(o_ps=o_ps, o_bv=o_bv, o_pf=o_pf, zCS=zCS, w=w, c=c, hc=hc)
             ext[lado] = o_bv
             sec.vereda_ancho[lado] = w
@@ -156,7 +178,8 @@ def construir(calle, alin, perfil, prog, par, capas_calz, capas_ver,
         if not lateral[lado]:
             continue
         o_bv, o_pf, zCS, w = info["o_bv"], info["o_pf"], info["zCS"], info["w"]
-        poly = [(o, z) for _, o, z in pts[:5]] + [(o_bv, R - s * o_bv - t1), (b, R - s * b - t1)]
+        hasta_bv = [(o, z) for c_, o, z in pts if not c_.startswith("PF")]      # BC, FC, CS, BV
+        poly = hasta_bv + [(o_bv, R - s * o_bv - t1), (b, R - s * b - t1)]
         sec.poligonos["Concreto cuneta y sardinel"].append([(sg * o, z) for o, z in poly])
         if w <= 0:
             continue
@@ -196,6 +219,7 @@ def calcular_tierras(sec, terreno, paso=0.10):
     """
     linea = sec.lineas["SUBRASANTE"]
     corte = relleno = faltante = 0.0
+    m_corte = m_relleno = 0.0
     perfil_t = []
     for (c1, oa, za), (c2, ob, zb) in zip(linea[:-1], linea[1:]):
         if ob - oa < 1e-9:      # tramo vertical: no aporta área
@@ -217,19 +241,28 @@ def calcular_tierras(sec, terreno, paso=0.10):
             if math.isnan(d1) or math.isnan(d2):
                 faltante += h
                 continue
+            om = (os_[i] + os_[i + 1]) / 2
             if d1 >= 0 and d2 >= 0:
                 corte += h * (d1 + d2) / 2
+                m_corte += h * (d1 + d2) / 2 * om
             elif d1 <= 0 and d2 <= 0:
                 relleno += -h * (d1 + d2) / 2
+                m_relleno += -h * (d1 + d2) / 2 * om
             else:
                 x = h * d1 / (d1 - d2)
+                oc = os_[i] + x
                 if d1 > 0:
                     corte += x * d1 / 2
                     relleno += -(h - x) * d2 / 2
+                    m_corte += x * d1 / 2 * (os_[i] + oc) / 2
+                    m_relleno += -(h - x) * d2 / 2 * (oc + os_[i + 1]) / 2
                 else:
                     relleno += -x * d1 / 2
                     corte += (h - x) * d2 / 2
+                    m_relleno += -x * d1 / 2 * (os_[i] + oc) / 2
+                    m_corte += (h - x) * d2 / 2 * (oc + os_[i + 1]) / 2
     sec.area_corte, sec.area_relleno, sec.terreno_faltante = corte, relleno, faltante
+    sec.mom_corte, sec.mom_relleno = m_corte, m_relleno
     # perfil del terreno en todo el ancho (para dibujar)
     sec.perfil_terreno = sorted({round(o, 4): z for o, z in perfil_t}.items())
     return corte, relleno

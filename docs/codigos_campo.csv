@@ -1,0 +1,32 @@
+﻿codigo,nombre,grupo,geometria,va_al_terreno,como_tomarlo
+BM,Banco de nivel (BM),CONTROL,punto,NO,"Sobre la marca del hito, prisma a plomo. Nombre en la nota: 'BM / BM-01'."
+EST,Estación de la estación total,CONTROL,punto,NO,Punto de estación (lo registra el equipo). No entra al terreno.
+REF,Punto de referencia / visado,CONTROL,punto,NO,Punto de orientación o de control auxiliar.
+PC,Punto de control GNSS,CONTROL,punto,NO,Punto de control geodésico (GPS).
+TN,Terreno natural,TERRENO,punto,SI,"Suelo natural, prisma apoyado en el terreno. Grilla de 5 a 10 m y en todo cambio de pendiente."
+TNL,Línea de quiebre del terreno,TERRENO,linea,SI,"Quiebre marcado (borde de plataforma, lomo, cambio brusco). Numerar cada línea: TNL1, TNL2..."
+CAB,Cabeza (borde superior) de talud,TERRENO,linea,SI,"Por el borde superior, cada 5 m y en los quiebres."
+PIE,Pie de talud,TERRENO,linea,SI,"Por el pie, cada 5 m y en los quiebres."
+ZJ,Fondo de zanja / acequia / canal,TERRENO,linea,SI,"Por el fondo, en el eje del cauce."
+BOR,Borde de zanja / canal / río,TERRENO,linea,SI,"Por el borde superior de cada margen (BOR1, BOR2)."
+EJX,Eje de vía existente,EXISTENTE,linea,SI,"En el eje de la pista existente, cada 10 m."
+PEX,Borde de pavimento existente,EXISTENTE,linea,SI,"En el borde del pavimento que se conserva, cada 5 m y donde empieza/termina la obra. El diseño tiene que empalmar con estas cotas."
+EMP,Punto de empalme,EXISTENTE,punto,SI,"Donde la obra se une a lo existente (fin de pavimento, sardinel o vereda que se conservan): al menos eje y dos bordes en cada empalme. La app compara con la cota de diseño."
+SDX,Cabeza de sardinel existente,EXISTENTE,linea,NO,En la arista superior del sardinel.
+CNX,Fondo de cuneta existente,EXISTENTE,linea,SI,"En el fondo de la cuneta, junto al sardinel."
+VEX,Borde de vereda existente,EXISTENTE,linea,SI,En la arista exterior de la vereda existente.
+AFI,Borde de afirmado / trocha,EXISTENTE,linea,SI,En el borde de la vía sin pavimentar.
+FAC,Pie de fachada,LIMITE,linea,SI,"Al pie del muro, a nivel del suelo o de la vereda, en cada esquina y quiebre del muro y cada 10 m. Numerar por manzana/cuadra: FAC1, FAC2... Es el límite de la vereda."
+MUR,Muro o cerco,LIMITE,linea,SI,"Al pie del muro o cerco, como FAC."
+LP,Límite de propiedad sin construir,LIMITE,linea,SI,En los hitos o estacas del lindero.
+PTA,Puerta (umbral),ACCESO,punto,NO,"Al CENTRO de la puerta, prisma apoyado SOBRE el umbral (la grada o piso de la entrada). Ancho en metros como parámetro: 'PTA 0.90'. La app verifica que la vereda no tape la puerta."
+COC,Cochera / portón (umbral),ACCESO,punto,NO,"Al centro del portón, sobre el piso de la entrada. Ancho: 'COC 3.00'. La app pide rebaje de sardinel."
+GRA,Grada o escalón existente sobre la vereda,ACCESO,punto,NO,En la arista exterior del escalón que sobresale de la fachada. La app avisa si invade la vereda.
+POS,"Poste (luz, teléfono)",OBSTACULO,punto,SI,"Prisma pegado al poste, en la cara que mira al EJE de la calle, al pie (nivel del suelo). Diámetro como parámetro: 'POS 0.25'. La app ubica el centro a medio diámetro detrás y revisa si estorba."
+ARB,Árbol,OBSTACULO,punto,SI,"Igual que el poste: cara del tronco hacia el eje, al pie; diámetro del tronco: 'ARB 0.40'."
+GRI,Grifo contra incendio,OBSTACULO,punto,SI,"Al centro, al pie."
+BZD,Tapa de buzón de desagüe,TAPA,punto,SI,"Al CENTRO de la tapa, sobre la tapa. La app dice cuánto subir o bajar la tapa para la rasante nueva."
+CAJ,Caja de registro (desagüe),TAPA,punto,SI,"Al centro de la tapa, sobre la tapa."
+VAL,Caja de válvula (agua),TAPA,punto,SI,"Al centro de la tapa, sobre la tapa."
+MED,Caja de medidor de agua,TAPA,punto,SI,"Al centro de la tapa, sobre la tapa."
+SUM,Sumidero / rejilla,TAPA,punto,SI,"Al centro de la rejilla, sobre la rejilla."

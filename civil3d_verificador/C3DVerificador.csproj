@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Complemento de verificación para Civil 3D 2025 (.NET 8). Se carga con NETLOAD,
+       en Civil 3D o en accoreconsole (sin ventana). Ver README.md. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>C3DVerificador</AssemblyName>
+    <RootNamespace>C3DVerificador</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <C3DDir Condition="'$(C3DDir)'==''">C:\Program Files\Autodesk\AutoCAD 2025</C3DDir>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="accoremgd"><HintPath>$(C3DDir)\accoremgd.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="acdbmgd"><HintPath>$(C3DDir)\acdbmgd.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="AecBaseMgd"><HintPath>$(C3DDir)\ACA\AecBaseMgd.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="AeccDbMgd"><HintPath>$(C3DDir)\C3D\AeccDbMgd.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

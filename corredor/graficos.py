@@ -7,7 +7,8 @@ from .malla import fachadas_3d, modelo
 
 COLORES = {
     "CALZADA": "#8e8e8e", "CUNETA": "#4a90c2", "SARDINEL": "#d0d3d4", "VEREDA": "#e6d3b3",
-    "FACHADA": "#c0392b", "TERRENO": "#8d6e63",
+    "FACHADA": "#c0392b", "TERRENO": "#8d6e63", "BADEN": "#8e44ad", "RAMPA": "#f39c12",
+    "ESQUINA CALZADA": "#8e8e8e", "ESQUINA SARDINEL": "#d0d3d4", "MARTILLO": "#c0504a",
 }
 COLORES_CAPAS = ["#a6acaf", "#d4ac0d", "#ca6f1e", "#784212", "#5d4037"]
 COLORES_VEREDA = ["#d5d8dc", "#f0b27a", "#e59866"]
@@ -63,6 +64,10 @@ def dibujar_planta(ax, res, eje_sel=None):
         mid = rc.alin.punto(rc.alin.prog_inicial + 0.3 * rc.alin.longitud, -9.0)
         ax.annotate(f"{k}\n{rc.calle.nombre}", mid, fontsize=8, weight="bold", color="#1a5276", ha="center",
                     va="center")
+    for e in res.esquinas:
+        if e.get("ok"):
+            for arco in (e["arco_cara"], e["arco_dorso"]):
+                ax.plot([p[0] for p in arco], [p[1] for p in arco], color="#555", lw=0.8, zorder=3)
     for u in res.umbrales:
         uu = u["umbral"]
         col = "#c0392b" if u["diferencia"] < 0 else "#1e8449"
@@ -179,6 +184,12 @@ def dibujar_3d(ax, res, ejes=None, exag=5.0, con_terreno=True, con_fachadas=True
             return True
         return min(np.hypot(p[0] - centro[0], p[1] - centro[1]) for p in q) <= radio
 
+    if not ejes or tramo is not None:
+        from .esquinas import modelo as modelo_esquinas
+        for cat, q in modelo_esquinas(res):
+            if cerca(q):
+                caras.append(q)
+                colores.append(_color_categoria(cat))
     if con_fachadas:
         for cat, q in fachadas_3d(proy, res.terreno, res):
             if cerca(q):

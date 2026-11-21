@@ -60,7 +60,10 @@ casi lo mismo, ver `docs/VERIFICACION.md`):
 | Calle | Corte (m³) | Relleno (m³) | Losa (m³) |
 |---|---|---|---|
 | EJE-01 | 2306.15 | 0.00 | 288.00 |
-| EJE-02 | 1467.37 | 59.53 | 220.84 |
+| EJE-02 | 1465.53 | 51.52 | 220.84 |
+
+Civil 3D 2025 (superficie de volumen, verificado con `herramientas/verificar_civil3d.py`):
+EJE-01 corte 2308.19 m³; EJE-02 corte 1465.90 m³ y relleno 51.17 m³.
 
 **Por qué puede haber diferencias:**
 - Civil 3D triangula el terreno a su manera. Si lo creas desde los puntos, revisa que no se

@@ -6,3 +6,12 @@ dist/
 salida/
 datos_ejemplo/salida/
 .pytest_cache/
+civil3d_verificador/bin/
+civil3d_verificador/obj/
+salida_verificacion/
+salida_escenarios/
+salida_presentacion/
+proyectos/
+salida_nunoa/
+salida_nunoa_verif/
+capturas/

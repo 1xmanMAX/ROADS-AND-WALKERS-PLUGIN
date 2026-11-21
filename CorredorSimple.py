@@ -4,6 +4,8 @@
   python CorredorSimple.py <carpeta_proyecto>    -> abre la ventana con ese proyecto
   python CorredorSimple.py calcular <carpeta_proyecto> <carpeta_salida> [BM lectura_atras]
                                                  -> calcula y exporta sin ventana
+  python CorredorSimple.py civil3d <carpeta_proyecto> [archivo.dwg]
+                                                 -> arma el modelo en Civil 3D y lo abre
 """
 import sys
 
@@ -32,5 +34,11 @@ def consola(args):
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "calcular":
         sys.exit(consola(sys.argv[2:]))
+    if len(sys.argv) > 2 and sys.argv[1] == "civil3d":
+        from corredor.civil3d import generar_y_abrir
+        dwg, mensajes, como = generar_y_abrir(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
+        print("\n".join(mensajes))
+        print(f"-> {dwg} ({como})")
+        sys.exit(0)
     from corredor.app import main
     main()

@@ -10,10 +10,19 @@ PARAMETROS = {
     "num_carriles": (2, "-", "Número de carriles (informativo)"),
     "cuneta_ancho": (40.0, "cm", "Cuneta básica: ancho (solo geométrica, sin diseño hidráulico)"),
     "cuneta_profundidad": (10.0, "cm", "Cuneta básica: profundidad bajo el borde de calzada"),
+    "baden_ancho": (80.0, "cm", "Badén (cuneta Tipo II) en cruces: cruza la calle secundaria en línea con la cuneta de la principal; 0 = sin badén"),
+    "baden_profundidad": (7.0, "cm", "Badén: flecha de la V (cuánto baja en el centro)"),
+    "baden_espesor": (22.0, "cm", "Badén: espesor del concreto en los bordes"),
+    "radio_esquina": (300.0, "cm", "Radio de las esquinas en la cara del sardinel (0 = esquinas en ángulo, sin pieza de esquina)"),
+    "rampa_rebaje": (12.0, "cm", "Rampas de esquina: cuánto baja la vereda en el descanso (0 = sin rampas)"),
+    "rampa_largo": (100.0, "cm", "Rampas de esquina: largo de cada rampa (12 %)"),
+    "rampa_descanso": (100.0, "cm", "Rampas de esquina: largo del descanso entre las dos rampas"),
     "sardinel_ancho": (15.0, "cm", "Ancho de la cara superior del sardinel"),
     "sardinel_altura": (15.0, "cm", "Desnivel entre borde de calzada y vereda terminada"),
     "vereda_pendiente": (2.0, "%", "Pendiente transversal de vereda, cae hacia la calzada"),
     "intervalo_secciones": (10.0, "m", "Intervalo entre secciones de cálculo"),
+    "variacion_area_max": (25.0, "%", "Si el corte o relleno cambia más que esto entre dos secciones, se agrega una intermedia (0 = no)"),
+    "intervalo_min_secciones": (2.5, "m", "Separación mínima al agregar secciones intermedias"),
     "pendiente_long_max": (8.0, "%", "PARÁMETRO A CONFIRMAR con norma/expediente"),
     "pendiente_long_min": (0.5, "%", "PARÁMETRO A CONFIRMAR con norma/expediente"),
     "vereda_ancho_min": (120.0, "cm", "PARÁMETRO A CONFIRMAR con norma/expediente"),
@@ -118,6 +127,7 @@ class Proyecto:
     umbrales: list = field(default_factory=list)
     terreno: list = field(default_factory=list)
     bms: list = field(default_factory=list)
+    codigos_alias: dict = field(default_factory=dict)   # códigos propios del topógrafo -> manual
 
     def capas_de(self, ambito):
         return sorted([c for c in self.capas if c.ambito == ambito], key=lambda c: c.orden)

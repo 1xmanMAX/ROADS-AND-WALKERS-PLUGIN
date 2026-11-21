@@ -2,7 +2,8 @@
 
 Cada cálculo de la app se comprobó a mano con 2 o 3 puntos. Las pruebas automáticas
 (`python -m pytest`) repiten estas mismas cuentas cada vez que se cambia el código.
-Datos: `datos_ejemplo/`. Resultado: **18 de 18 pruebas correctas**.
+Datos: `datos_ejemplo/`. Resultado: **53 de 53 pruebas correctas** (18 con estas cuentas a mano y 35 con los levantamientos
+de `escenarios/` comparados contra Civil 3D 2025, ver `docs/PRUEBAS_CIVIL3D.md`).
 
 ## 1. Coordenadas: borde derecho de calzada, EJE-01 0+050
 
@@ -80,7 +81,11 @@ La app da **10.053 m²** porque mide el terreno cada 10 cm. La diferencia es de 
 
 ## 9. Comparación de volúmenes por dos métodos
 
-| Calle | Área media (app) | Entre superficies TN − subrasante (como Civil 3D) | Diferencia |
+| Calle | Área media (app) | Entre superficies TN − subrasante, calculado por Civil 3D | Diferencia |
 |---|---|---|---|
-| EJE-01 | 2306.15 m³ | 2307.66 m³ | 0.07 % |
-| EJE-02 | 1467.37 m³ | 1466.22 m³ | 0.08 % |
+| EJE-01 | 2306.15 m³ | 2308.19 m³ (Civil 3D 2025) | 0.09 % |
+| EJE-02 | 1465.53 m³ | 1465.90 m³ (Civil 3D 2025) | 0.03 % |
+
+En la hondonada de EJE-02 la app agrega secciones intermedias (cada 5 y 2.5 m) porque el relleno
+cambia rápido entre secciones. Con secciones solo cada 10 m el relleno salía 59.53 m³, 16 % más que
+los 51.17 m³ de Civil 3D; ahora sale 51.52 m³ (+0.7 %).

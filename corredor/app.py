@@ -148,6 +148,8 @@ class App(tk.Tk):
         ttk.Button(barra, text="💾 Guardar proyecto", command=self.guardar).pack(side="left", padx=3)
         ttk.Button(barra, text="Cargar ejemplo", command=self.cargar_ejemplo).pack(side="left", padx=3)
         ttk.Button(barra, text="▶  CALCULAR", style="Grande.TButton", command=self.calcular).pack(side="left", padx=16)
+        ttk.Button(barra, text="🏗  Generar en Civil 3D", style="Grande.TButton",
+                   command=self.generar_civil3d).pack(side="left", padx=4)
         self.estado = tk.StringVar(value="Abra un proyecto (carpeta con CSV) o cargue el ejemplo.")
         ttk.Label(barra, textvariable=self.estado, foreground="#1a5276").pack(side="left", padx=10)
 
@@ -979,6 +981,35 @@ class App(tk.Tk):
         guardar_proyecto(self.proy, d)
         self.carpeta = d
         self.estado.set(f"Proyecto guardado en {d}")
+
+    def generar_civil3d(self):
+        """Calcula, guarda y arma el modelo en Civil 3D (alineamientos, perfiles, superficies, 3D con
+        esquinas y badenes) con el complemento, y lo abre en el Civil 3D activo."""
+        from . import civil3d
+        ok, motivo = civil3d.disponible()
+        if not ok:
+            return messagebox.showerror("Civil 3D", motivo)
+        if not self.calcular():
+            return
+        if not self.carpeta or Path(self.carpeta).resolve() == recurso("datos_ejemplo").resolve():
+            d = filedialog.askdirectory(title="Carpeta donde guardar el proyecto para Civil 3D")
+            if not d:
+                return
+            self.carpeta = d
+        guardar_proyecto(self.proy, self.carpeta)
+        self.estado.set("Generando en Civil 3D (sin ventana, 1 a 3 minutos)…")
+        import threading
+
+        def trabajo():
+            try:
+                dwg, mensajes, como = civil3d.generar_y_abrir(self.carpeta)
+                resumen = "\n".join(m.replace("[CS]", "").strip() for m in mensajes if "corte" not in m)
+                txt = f"Dibujo listo ({como}):\n{dwg}\n\n{resumen[-1500:]}"
+                self.after(0, lambda: (self.estado.set(f"Civil 3D: {dwg}"), messagebox.showinfo("Generado en Civil 3D", txt)))
+            except Exception as e:
+                self.after(0, lambda: (self.estado.set("No se pudo generar en Civil 3D"),
+                                       messagebox.showerror("Civil 3D", str(e))))
+        threading.Thread(target=trabajo, daemon=True).start()
 
     def calcular(self):
         self.aplicar_prog0()
